@@ -19,19 +19,24 @@ function ResetCamera({ url }) {
   const bounds = useBounds();
 
   useEffect(() => {
+    // On augmente le délai pour être sûr que l'objet est chargé
     const timer = setTimeout(() => {
         if (bounds && controls) {
-			
-			controls.reset();
-			
+            console.log("ResetCamera: Recentrage en cours..."); // Pour vérifier dans la console (F12)
+            
+            // 1. On ajuste la vue aux limites de l'objet
             bounds.refresh().clip().fit();
 
-            // controls.target.set(0, 0, 0);
-
-            // controls.update();
-
+            // 2. On force le pivot de rotation au centre absolu (0,0,0)
+            // L'objet étant dans <Center>, son centre est forcément (0,0,0)
+            controls.target.set(0, 0, 0);
+            
+            // 3. On applique les changements
+            controls.update();
+        } else {
+            console.warn("ResetCamera: 'controls' ou 'bounds' manquant. Avez-vous mis 'makeDefault' sur OrbitControls ?");
         }
-    }, 80);
+    }, 500); // Délai augmenté à 500ms
 
     return () => clearTimeout(timer);
   }, [url, bounds, controls]);
