@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Stage } from '@react-three/drei';
+import { OrbitControls, Stage, Bounds } from '@react-three/drei';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
 import { useLoader } from '@react-three/fiber';
 import './App.css';
@@ -167,12 +167,15 @@ function App() {
           <spotLight position={[50, 50, 50]} angle={0.25} penumbra={1} castShadow intensity={1} />
           <Suspense fallback={null}>
             {fileUrl && (
-              <Stage environment="city" intensity={0.4} adjustCamera={true}>
-                <Model url={fileUrl} color={color} />
-              </Stage>
+              /* key={fileUrl} force le composant à se réinitialiser à chaque nouveau fichier */
+              <Bounds key={fileUrl} fit clip observe margin={1.2}>
+                <Stage environment="city" intensity={0.4} adjustCamera={false}>
+                  <Model url={fileUrl} color={color} />
+                </Stage>
+              </Bounds>
             )}
           </Suspense>
-          <OrbitControls makeDefault minPolarAngle={0} maxPolarAngle={Math.PI / 1.7} />
+          <OrbitControls makeDefault minPolarAngle={0} maxPolarAngle={Math.PI} />
         </Canvas>
       </main>
     </div>
