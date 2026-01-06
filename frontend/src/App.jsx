@@ -1,13 +1,10 @@
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Stage, Grid } from '@react-three/drei';
+import { OrbitControls, Stage } from '@react-three/drei';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
 import { useLoader } from '@react-three/fiber';
-
-// On importe le CSS qu'on vient de créer
 import './App.css';
 
-// --- COMPOSANT 3D ---
 function Model({ url, color }) {
   const geometry = useLoader(STLLoader, url);
   return (
@@ -17,35 +14,90 @@ function Model({ url, color }) {
   );
 }
 
-// --- APP PRINCIPALE ---
 function App() {
+  // États UI
   const [fileUrl, setFileUrl] = useState(null);
   const [material, setMaterial] = useState('PLA');
   const [infill, setInfill] = useState(20);
   const [color, setColor] = useState('#1e90ff');
-  const [price, setPrice] = useState(0);
+  
+  // États Données
+  const [volume, setVolume] = useState(null); // Stocke le volume brut reçu du serveur
+  const [quote, setQuote] = useState({ price: 0, weight: 0 }); // Stocke le devis final
+  const [isComputing, setIsComputing] = useState(false);
 
   const colors = ['#1e90ff', '#ff4500', '#28a745', '#333333', '#f0f0f0'];
 
-  const handleFileUpload = (event) => {
+  // 1. GESTION DE L'UPLOAD (On récupère juste le volume)
+  const handleFileUpload = async (event) => {
     const file = event.target.files[0];
-    if (file) {
-      setFileUrl(URL.createObjectURL(file));
-      setPrice(15.50); // Simulation
+    if (!file) return;
+
+    setFileUrl(URL.createObjectURL(file));
+    setIsComputing(true);
+    setQuote({ price: 0, weight: 0 }); // Reset visuel
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      // Appel Route 1 : Analyse
+      const response = await fetch("http://localhost:8000/analyze-file", {
+        method: "POST",
+        body: formData,
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setVolume(data.volume_cm3); // On sauvegarde le volume !
+      }
+    } catch (error) {
+      console.error("Erreur upload:", error);
+    } finally {
+      setIsComputing(false);
     }
   };
 
+  // 2. EFFET SECONDAIRE : RECALCUL AUTOMATIQUE
+  // Se déclenche à chaque fois que 'volume', 'material' ou 'infill' change
+  useEffect(() => {
+    if (volume !== null) {
+      const fetchPrice = async () => {
+        setIsComputing(true);
+        try {
+          // Appel Route 2 : Calcul léger
+          const response = await fetch("http://localhost:8000/calculate-price", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              volume_cm3: volume,
+              material: material,
+              infill: parseInt(infill)
+            }),
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            setQuote({ price: data.price, weight: data.weight_g });
+          }
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setIsComputing(false);
+        }
+      };
+
+      fetchPrice();
+    }
+  }, [volume, material, infill]); // <--- Les dépendances qui déclenchent le recalcul
+
   return (
     <div className="app-container">
-      
-      {/* --- SIDEBAR --- */}
       <aside className="sidebar">
         <div className="sidebar-header">
           <h1>3D Print Studio</h1>
           <p>Configurez votre impression</p>
         </div>
 
-        {/* Upload */}
         <div className="form-section">
           <label className="label-title">1. Fichier 3D (.stl)</label>
           <label className="upload-btn">
@@ -54,32 +106,26 @@ function App() {
           </label>
         </div>
 
-        {/* Matériau */}
         <div className="form-section">
           <label className="label-title">2. Matériau</label>
           <select className="select-input" value={material} onChange={(e) => setMaterial(e.target.value)}>
             <option value="PLA">PLA (Standard)</option>
             <option value="PETG">PETG (Résistant)</option>
             <option value="ABS">ABS (Technique)</option>
+            <option value="TPU">TPU (Flexible)</option>
           </select>
         </div>
 
-        {/* Couleur */}
         <div className="form-section">
           <label className="label-title">3. Couleur</label>
           <div className="color-picker">
              {colors.map((c) => (
-               <div 
-                key={c}
-                onClick={() => setColor(c)}
-                style={{ background: c }}
-                className={`color-swatch ${color === c ? 'active' : 'inactive'}`}
-               />
+               <div key={c} onClick={() => setColor(c)} style={{ background: c }}
+                className={`color-swatch ${color === c ? 'active' : 'inactive'}`} />
              ))}
           </div>
         </div>
 
-        {/* Infill */}
         <div className="form-section">
           <label className="label-title">4. Remplissage: {infill}%</label>
           <input 
@@ -89,17 +135,24 @@ function App() {
           />
         </div>
 
-        {/* Prix */}
         <div className="price-box">
           <div className="price-label">Estimation du coût</div>
-          <h2 className="price-value">{fileUrl ? `${price} €` : "-- €"}</h2>
-          <button className="order-btn" disabled={!fileUrl}>
+          <h2 className="price-value">
+            {isComputing ? "..." : (quote.price > 0 ? `${quote.price} €` : "-- €")}
+          </h2>
+          {quote.weight > 0 && (
+            <div style={{fontSize: '0.8rem', color: '#666', marginTop: '5px'}}>
+              Poids estimé: {quote.weight} g<br/>
+              (Vol: {Math.round(volume)} cm³)
+            </div>
+          )}
+          
+          <button className="order-btn" disabled={!quote.price || isComputing}>
             Lancer la production
           </button>
         </div>
       </aside>
 
-      {/* --- VIEWER --- */}
       <main className="viewer-container">
         {!fileUrl && (
           <div className="empty-state">
@@ -108,11 +161,10 @@ function App() {
           </div>
         )}
 
-        <Canvas shadows camera={{ position: [0, 0, 100], fov: 45 }}>
+        <Canvas shadows camera={{ position: [50, 50, 50], fov: 50 }}>
           <color attach="background" args={['#f5f5f7']} />
           <ambientLight intensity={0.7} />
           <spotLight position={[50, 50, 50]} angle={0.25} penumbra={1} castShadow intensity={1} />
-          
           <Suspense fallback={null}>
             {fileUrl && (
               <Stage environment="city" intensity={0.4} adjustCamera={true}>
@@ -120,12 +172,9 @@ function App() {
               </Stage>
             )}
           </Suspense>
-
           <OrbitControls makeDefault minPolarAngle={0} maxPolarAngle={Math.PI / 1.7} />
-          <Grid infiniteGrid fadeDistance={400} sectionColor="#cccccc" cellColor="#e5e5e5"/>
         </Canvas>
       </main>
-
     </div>
   );
 }
