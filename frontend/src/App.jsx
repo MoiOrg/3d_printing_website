@@ -6,42 +6,29 @@ import { useLoader, useThree } from '@react-three/fiber';
 import './App.css';
 
 function Model({ url, color }) {
-	const geometry = useLoader(STLLoader, url);
-	return (
-	<mesh geometry={geometry} castShadow receiveShadow>
-		<meshStandardMaterial color={color} roughness={0.3} metalness={0.1} />
-	</mesh>
-	);
+  const geometry = useLoader(STLLoader, url);
+  return (
+    <mesh geometry={geometry} castShadow receiveShadow>
+      <meshStandardMaterial color={color} roughness={0.3} metalness={0.1} />
+    </mesh>
+  );
 }
 
-function ResetCamera({ url }) {
-  const { controls } = useThree();
+function ModelWithAutoFit({ url, color }) {
   const bounds = useBounds();
 
-  useEffect(() => {
-    // On augmente le délai pour être sûr que l'objet est chargé
-    const timer = setTimeout(() => {
-        if (bounds && controls) {
-            console.log("ResetCamera: Recentrage en cours..."); // Pour vérifier dans la console (F12)
-            
-            // 1. On ajuste la vue aux limites de l'objet
-            bounds.refresh().clip().fit();
+  const handleCentered = () => {
+    // IMPORTANT : J'ai retiré .clip(). 
+    // .clip() cause souvent le bug "je suis à l'intérieur" en coupant le rendu trop près.
+    // .fit() suffit pour cadrer la caméra.
+    bounds.refresh().fit();
+  };
 
-            // 2. On force le pivot de rotation au centre absolu (0,0,0)
-            // L'objet étant dans <Center>, son centre est forcément (0,0,0)
-            controls.target.set(0, 0, 0);
-            
-            // 3. On applique les changements
-            controls.update();
-        } else {
-            console.warn("ResetCamera: 'controls' ou 'bounds' manquant. Avez-vous mis 'makeDefault' sur OrbitControls ?");
-        }
-    }, 500); // Délai augmenté à 500ms
-
-    return () => clearTimeout(timer);
-  }, [url, bounds, controls]);
-
-  return null;
+  return (
+    <Center onCentered={handleCentered}>
+      <Model url={url} color={color} />
+    </Center>
+  );
 }
 
 function App() {
@@ -189,22 +176,19 @@ function App() {
 			</div>
 		)}
 
-		<Canvas shadows camera={{ position: [50, 50, 50], fov: 50 }}>
+		<Canvas shadows camera={{ position: [0, 0, 10], fov: 50, near: 0.1, far: 10000 }}>
 			<color attach="background" args={['#f5f5f7']} />
 			<ambientLight intensity={0.7} />
 			<spotLight position={[50, 50, 50]} angle={0.25} penumbra={1} castShadow intensity={1} />
 			<Environment preset="city" />
 			<Suspense fallback={null}>
 			{fileUrl && (
-				<Bounds key={fileUrl} margin={1.0}>
-					<Center>
-						<Model url={fileUrl} color={color} />
-					</Center>
-					<ResetCamera url={fileUrl} />
+				<Bounds key={fileUrl} margin={1.5}>
+					<ModelWithAutoFit url={fileUrl} color={color} />
 				</Bounds>
 			)}
 			</Suspense>
-			<OrbitControls makeDefault minPolarAngle={0} maxPolarAngle={Math.PI} target={[0, 0, 0]} />
+			<OrbitControls makeDefault minPolarAngle={0} maxPolarAngle={Math.PI} />
 		</Canvas>
 		</main>
 	</div>
