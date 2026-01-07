@@ -1,5 +1,6 @@
 export const TRANSLATIONS = {
   FR: {
+    // --- Global & Menu ---
     title: "🖨️ Studio d'Impression 3D",
     menu_title: "Tableau de bord de production",
     menu_add: "Ajouter une nouvelle pièce",
@@ -12,8 +13,8 @@ export const TRANSLATIONS = {
     col_price: "Prix",
     col_actions: "Actions",
     btn_delete: "Supprimer",
-    
-    // Editor
+
+    // --- Editor ---
     back_menu: "← Retour au menu",
     config_title: "Configuration de la pièce",
     section_file: "1. Fichier 3D",
@@ -31,7 +32,7 @@ export const TRANSLATIONS = {
     empty_title: "Aucun modèle chargé",
     empty_desc: "Utilisez le panneau de gauche pour importer un fichier STL.",
 
-    // Tech & Mat
+    // --- Matériaux & Technologies ---
     tech_fdm: "Dépôt de fil (FDM)",
     mat_pla: "PLA (Standard)",
     mat_petg: "PETG (Résistant)",
@@ -42,9 +43,17 @@ export const TRANSLATIONS = {
     mat_res_tough: "Résine Tough",
     tech_sls: "Frittage de poudre (SLS)",
     mat_pa12: "Nylon PA12",
-    mat_glass: "Nylon Chargé Verre"
+    mat_glass: "Nylon Chargé Verre",
+
+    // --- Admin ---
+    admin_title: "Administration Production",
+    admin_batches: "Historique des lots",
+    admin_select: "Sélectionnez un lot à gauche pour voir les détails.",
+    admin_back: "← Retour au site"
   },
+  
   EN: {
+    // --- Global & Menu ---
     title: "🖨️ 3D Print Studio",
     menu_title: "Production Dashboard",
     menu_add: "Add New Part",
@@ -58,6 +67,7 @@ export const TRANSLATIONS = {
     col_actions: "Actions",
     btn_delete: "Remove",
 
+    // --- Editor ---
     back_menu: "← Back to Menu",
     config_title: "Part Configuration",
     section_file: "1. 3D File",
@@ -75,6 +85,7 @@ export const TRANSLATIONS = {
     empty_title: "No model loaded",
     empty_desc: "Use the left panel to import an STL file.",
 
+    // --- Materials & Technologies ---
     tech_fdm: "FDM (Filament)",
     mat_pla: "PLA (Standard)",
     mat_petg: "PETG (Durable)",
@@ -85,9 +96,17 @@ export const TRANSLATIONS = {
     mat_res_tough: "Tough Resin",
     tech_sls: "SLS (Powder)",
     mat_pa12: "Nylon PA12",
-    mat_glass: "Glass-Filled Nylon"
+    mat_glass: "Glass-Filled Nylon",
+
+    // --- Admin ---
+    admin_title: "Production Admin",
+    admin_batches: "Batch History",
+    admin_select: "Select a batch on the left to view details.",
+    admin_back: "← Back to site"
   },
+
   CN: {
+    // --- Global & Menu ---
     title: "🖨️ 3D打印工作室",
     menu_title: "生产仪表板",
     menu_add: "添加新零件",
@@ -101,6 +120,7 @@ export const TRANSLATIONS = {
     col_actions: "操作",
     btn_delete: "删除",
 
+    // --- Editor ---
     back_menu: "← 返回菜单",
     config_title: "零件配置",
     section_file: "1. 3D文件",
@@ -118,6 +138,7 @@ export const TRANSLATIONS = {
     empty_title: "未加载模型",
     empty_desc: "请使用左侧面板导入 STL 文件。",
 
+    // --- Materials & Technologies ---
     tech_fdm: "熔融沉积 (FDM)",
     mat_pla: "PLA (标准)",
     mat_petg: "PETG (耐用)",
@@ -128,6 +149,12 @@ export const TRANSLATIONS = {
     mat_res_tough: "韧性树脂",
     tech_sls: "激光烧结 (SLS)",
     mat_pa12: "尼龙 PA12",
-    mat_glass: "玻纤尼龙"
+    mat_glass: "玻纤尼龙",
+
+    // --- Admin ---
+    admin_title: "生产管理",
+    admin_batches: "生产批次记录",
+    admin_select: "请在左侧选择一个批次查看详情。",
+    admin_back: "← 返回网站"
   }
 };

@@ -247,3 +247,36 @@ def launch_production():
         f.writelines(summary_lines)
         
     return {"status": "launched", "batch_id": batch_id, "count": moved_count}
+
+@app.get("/admin/batches")
+def list_production_batches():
+    """Liste tous les dossiers de production triés du plus récent au plus ancien"""
+    if not os.path.exists(PROD_DIR):
+        return []
+    
+    batches = []
+    # On liste les dossiers dans data/production
+    for name in os.listdir(PROD_DIR):
+        full_path = os.path.join(PROD_DIR, name)
+        if os.path.isdir(full_path):
+            batches.append(name)
+            
+    # Tri décroissant (le nom est une date, donc ça marche bien)
+    batches.sort(reverse=True)
+    return batches
+
+@app.get("/admin/batch/{batch_id}")
+def get_batch_details(batch_id: str):
+    """Lit le contenu du fichier MANIFESTE_PRODUCTION.txt pour un lot donné"""
+    # Sécurité basique pour éviter de remonter dans les dossiers (..)
+    safe_id = os.path.basename(batch_id)
+    target_dir = os.path.join(PROD_DIR, safe_id)
+    manifest_path = os.path.join(target_dir, "MANIFESTE_PRODUCTION.txt")
+    
+    if not os.path.exists(manifest_path):
+        return {"content": "Aucun manifeste trouvé pour ce lot (Ancien format ?)"}
+        
+    with open(manifest_path, "r", encoding="utf-8") as f:
+        content = f.read()
+        
+    return {"content": content}
