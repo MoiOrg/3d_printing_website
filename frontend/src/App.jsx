@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense, useMemo } from 'react';
+import React, { useState, useEffect, Suspense, useMemo, useRef } from 'react';
 import { Canvas, useLoader } from '@react-three/fiber';
 import { OrbitControls, Environment, Bounds, Center, useBounds } from '@react-three/drei';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
@@ -25,13 +25,14 @@ const PRINT_OPTIONS = {
   SLS: {
     label: "Frittage de poudre (SLS)",
     materials: [
-      { id: "NYLON_PA12", name: "Nylon PA12", color: "#D3D3D3" }, // Gris clair
-      { id: "NYLON_GLASS", name: "Nylon Chargé Verre", color: "#F5F5F5" } // Blanc
+      { id: "NYLON_PA12", name: "Nylon PA12", color: "#E3E3E3" }, // Gris clair
+      { id: "NYLON_GLASS", name: "Nylon Chargé Verre", color: "#F9F9F9" } // Blanc
     ]
   }
 };
 
-const INFILL_PRESETS = [20, 40, 60, 80, 100];
+// MODIFICATION : Suppression du 100%
+const INFILL_PRESETS = [20, 40, 60, 80];
 
 // --- COMPOSANTS 3D ---
 function Model({ url, color }) {
@@ -47,17 +48,18 @@ function Model({ url, color }) {
   );
 }
 
-function ModelWithAutoFit({ url, color }) {
+const ModelWithAutoFit = React.memo(function ModelWithAutoFit({ url, color }) {
   const bounds = useBounds();
   const handleCentered = () => {
     bounds.refresh().fit();
   };
+
   return (
     <Center onCentered={handleCentered}>
       <Model url={url} color={color} />
     </Center>
   );
-}
+});
 
 function App() {
   // État de l'application
@@ -72,6 +74,9 @@ function App() {
   const [volume, setVolume] = useState(null);
   const [quote, setQuote] = useState({ price: 0, weight: 0 });
   const [isComputing, setIsComputing] = useState(false);
+
+  // Référence pour les contrôles de la caméra
+  const controlsRef = useRef(null);
 
   // 1. GESTION DU CHANGEMENT DE TECHNOLOGIE
   const handleTechChange = (newTech) => {
@@ -144,11 +149,25 @@ function App() {
         }
       };
       
-      // CORRECTION ICI : suppression du "yb"
       const timeoutId = setTimeout(fetchPrice, 100);
       return () => clearTimeout(timeoutId);
     }
   }, [volume, materialKey, infill, techKey]);
+
+  // FONCTION DE ZOOM MANUEL
+  const handleZoom = (direction) => {
+    if (controlsRef.current) {
+      const zoomFactor = 1.2;
+      if (direction > 0) {
+        // Zoom In
+        controlsRef.current.dollyIn(zoomFactor);
+      } else {
+        // Zoom Out
+        controlsRef.current.dollyOut(zoomFactor);
+      }
+      controlsRef.current.update();
+    }
+  };
 
   return (
     <div className="app-layout">
@@ -209,20 +228,23 @@ function App() {
             </select>
           </div>
 
-          <div className="form-section">
-            <label className="label-title">4. Remplissage</label>
-            <div className="infill-grid">
-              {INFILL_PRESETS.map((val) => (
-                <button 
-                  key={val}
-                  className={`infill-btn ${infill === val ? 'active' : ''}`}
-                  onClick={() => setInfill(val)}
-                >
-                  {val}%
-                </button>
-              ))}
+          {/* MODIFICATION : Affichage conditionnel pour le Filaire (FDM) uniquement */}
+          {techKey === "FDM" && (
+            <div className="form-section">
+              <label className="label-title">4. Remplissage</label>
+              <div className="infill-grid">
+                {INFILL_PRESETS.map((val) => (
+                  <button 
+                    key={val}
+                    className={`infill-btn ${infill === val ? 'active' : ''}`}
+                    onClick={() => setInfill(val)}
+                  >
+                    {val}%
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="price-box">
             <div className="price-label">Estimation du coût</div>
@@ -252,20 +274,28 @@ function App() {
           )}
 
           <Canvas shadows camera={{ position: [0, 0, 10], fov: 50 }}>
-            <color attach="background" args={['#f5f5f7']} />
+            {/* MODIFICATION : Fond plus foncé (#e0e0e0) */}
+            <color attach="background" args={['#e0e0e0']} />
             <ambientLight intensity={0.7} />
             <spotLight position={[50, 50, 50]} angle={0.25} penumbra={1} castShadow intensity={1} />
             <Environment preset="city" />
             
             <Suspense fallback={null}>
               {fileUrl && (
-                <Bounds key={fileUrl} margin={1.2}>
+                <Bounds key={fileUrl} margin={2.0}>
                   <ModelWithAutoFit url={fileUrl} color={currentMaterialColor} />
                 </Bounds>
               )}
             </Suspense>
-            <OrbitControls makeDefault minPolarAngle={0} maxPolarAngle={Math.PI} />
+            {/* Ajout de la ref pour les contrôles */}
+            <OrbitControls ref={controlsRef} makeDefault minPolarAngle={0} maxPolarAngle={Math.PI} minDistance={10} maxDistance={400} />
           </Canvas>
+
+          {/* MODIFICATION : Boutons de zoom */}
+          <div className="zoom-controls">
+            <button className="zoom-btn" onClick={() => handleZoom(-1)} aria-label="Zoom avant">+</button>
+            <button className="zoom-btn" onClick={() => handleZoom(1)} aria-label="Zoom arrière">-</button>
+          </div>
         </main>
       </div>
     </div>
