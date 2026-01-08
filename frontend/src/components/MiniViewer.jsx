@@ -28,12 +28,12 @@ export default function MiniViewer({ url, color = "#6366f1" }) {
 
   return (
     <div style={{ width: '80px', height: '80px', borderRadius: '8px', overflow: 'hidden', background: '#f1f5f9', border: '1px solid #e2e8f0' }}>
-      <Canvas camera={{ position: [0, 0, 100], fov: 50 }}>
+      <Canvas camera={{ position: [0, 0, 100], fov: 50, near: 0.1, far: 2000 }}>
         <ambientLight intensity={0.5} />
         <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} />
         <Environment preset="city" />
         <Suspense fallback={null}>
-            <Bounds fit clip observe margin={1.2}>
+            <Bounds fit clip observe margin={1.8}>
                 <AutoFitModel url={url} color={finalColor} />
             </Bounds>
         </Suspense>
