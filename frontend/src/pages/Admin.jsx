@@ -7,8 +7,8 @@ export default function Admin({ lang }) {
   const t = TRANSLATIONS[lang];
   
   const [batches, setBatches] = useState([]);
-  const [selectedBatch, setSelectedBatch] = useState(null);
-  const [manifestContent, setManifestContent] = useState("");
+  const [selectedBatchId, setSelectedBatchId] = useState(null);
+  const [batchData, setBatchData] = useState({ content: "", items: [] });
 
   useEffect(() => {
     fetchBatches();
@@ -24,16 +24,22 @@ export default function Admin({ lang }) {
     }
   };
 
-  const loadManifest = async (batchId) => {
-    setSelectedBatch(batchId);
-    setManifestContent("Chargement...");
+  const loadBatchDetails = async (batchId) => {
+    setSelectedBatchId(batchId);
+    setBatchData({ content: "Chargement...", items: [] });
     try {
       const res = await fetch(`http://localhost:8000/admin/batch/${batchId}`);
       const data = await res.json();
-      setManifestContent(data.content);
+      setBatchData(data);
     } catch (e) {
-      setManifestContent("Erreur de chargement");
+      setBatchData({ content: "Erreur de chargement", items: [] });
     }
+  };
+
+  const getStatusColor = (status) => {
+    if (status === 'Completed') return '#28a745';
+    if (status === 'In Progress') return '#ffc107';
+    return '#dc3545';
   };
 
   return (
@@ -47,25 +53,37 @@ export default function Admin({ lang }) {
 
       <div style={{ display: 'flex', gap: '20px', flex: 1, overflow: 'hidden' }}>
         {/* Colonne de gauche : Liste */}
-        <div style={{ width: '300px', overflowY: 'auto', borderRight: '1px solid #ddd', paddingRight: '10px' }}>
+        <div style={{ width: '350px', overflowY: 'auto', borderRight: '1px solid #ddd', paddingRight: '10px' }}>
           <h3>{t.admin_batches || "Batches"}</h3>
           <ul style={{ listStyle: 'none', padding: 0 }}>
             {batches.map(b => (
-              <li key={b} style={{ marginBottom: '10px' }}>
+              <li key={b.id} style={{ marginBottom: '10px' }}>
                 <button 
-                  onClick={() => loadManifest(b)}
+                  onClick={() => loadBatchDetails(b.id)}
                   style={{ 
                     width: '100%', 
-                    padding: '10px', 
+                    padding: '12px', 
                     textAlign: 'left',
-                    background: selectedBatch === b ? '#007bff' : '#f8f9fa',
-                    color: selectedBatch === b ? 'white' : 'black',
+                    background: selectedBatchId === b.id ? '#007bff' : '#f8f9fa',
+                    color: selectedBatchId === b.id ? 'white' : 'black',
                     border: '1px solid #ddd',
                     borderRadius: '4px',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
                   }}
                 >
-                  📁 {b}
+                  <span>{b.id}</span>
+                  <span style={{ 
+                    fontSize: '0.8em', 
+                    padding: '2px 6px', 
+                    borderRadius: '4px', 
+                    background: getStatusColor(b.status),
+                    color: b.status === 'In Progress' ? 'black' : 'white'
+                  }}>
+                    {b.status}
+                  </span>
                 </button>
               </li>
             ))}
@@ -73,14 +91,37 @@ export default function Admin({ lang }) {
         </div>
 
         {/* Colonne de droite : Détails */}
-        <div style={{ flex: 1, background: '#1e1e1e', color: '#00ff00', padding: '20px', borderRadius: '8px', overflowY: 'auto', fontFamily: 'monospace' }}>
-          {selectedBatch ? (
-            <pre style={{ whiteSpace: 'pre-wrap' }}>{manifestContent}</pre>
-          ) : (
-            <div style={{ color: '#888', paddingTop: '50px', textAlign: 'center' }}>
-              {t.admin_select || "Select a batch"}
-            </div>
-          )}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          
+          {/* Liste des pièces et statut */}
+          <div style={{ padding: '15px', background: 'white', border: '1px solid #ddd', borderRadius: '8px', maxHeight: '200px', overflowY: 'auto' }}>
+            <h4>Production Status</h4>
+            {batchData.items.length > 0 ? (
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                 <tbody>
+                   {batchData.items.map((item, idx) => (
+                     <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
+                       <td style={{ padding: '5px' }}>{item.filename}</td>
+                       <td style={{ padding: '5px', textAlign: 'right' }}>
+                         {item.status === 'done' ? '✅ Produced' : '⏳ Pending'}
+                       </td>
+                     </tr>
+                   ))}
+                 </tbody>
+              </table>
+            ) : <p style={{ color: '#888' }}>Select a batch to see items.</p>}
+          </div>
+
+          {/* Manifeste Texte */}
+          <div style={{ flex: 1, background: '#1e1e1e', color: '#00ff00', padding: '20px', borderRadius: '8px', overflowY: 'auto', fontFamily: 'monospace' }}>
+            {selectedBatchId ? (
+              <pre style={{ whiteSpace: 'pre-wrap' }}>{batchData.content}</pre>
+            ) : (
+              <div style={{ color: '#888', paddingTop: '50px', textAlign: 'center' }}>
+                {t.admin_select || "Select a batch"}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

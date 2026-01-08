@@ -250,33 +250,69 @@ def launch_production():
 
 @app.get("/admin/batches")
 def list_production_batches():
-    """Liste tous les dossiers de production triés du plus récent au plus ancien"""
+    """Liste les lots avec un indicateur de statut"""
     if not os.path.exists(PROD_DIR):
         return []
     
     batches = []
-    # On liste les dossiers dans data/production
     for name in os.listdir(PROD_DIR):
         full_path = os.path.join(PROD_DIR, name)
         if os.path.isdir(full_path):
-            batches.append(name)
+            # Calculer le statut global du lot
+            total = 0
+            done = 0
+            json_files = glob.glob(os.path.join(full_path, "*.json"))
+            for jf in json_files:
+                try:
+                    with open(jf, "r") as f:
+                        data = json.load(f)
+                        total += 1
+                        if data.get("status") == "done":
+                            done += 1
+                except: pass
             
-    # Tri décroissant (le nom est une date, donc ça marche bien)
-    batches.sort(reverse=True)
+            status = "Pending"
+            if total > 0 and total == done:
+                status = "Completed"
+            elif done > 0:
+                status = "In Progress"
+
+            batches.append({
+                "id": name,
+                "status": status,
+                "progress": f"{done}/{total}"
+            })
+            
+    batches.sort(key=lambda x: x["id"], reverse=True)
     return batches
 
 @app.get("/admin/batch/{batch_id}")
 def get_batch_details(batch_id: str):
-    """Lit le contenu du fichier MANIFESTE_PRODUCTION.txt pour un lot donné"""
-    # Sécurité basique pour éviter de remonter dans les dossiers (..)
+    """Renvoie les détails du manifest ET la liste des fichiers avec leur statut"""
     safe_id = os.path.basename(batch_id)
     target_dir = os.path.join(PROD_DIR, safe_id)
-    manifest_path = os.path.join(target_dir, "MANIFESTE_PRODUCTION.txt")
     
-    if not os.path.exists(manifest_path):
-        return {"content": "Aucun manifeste trouvé pour ce lot (Ancien format ?)"}
-        
-    with open(manifest_path, "r", encoding="utf-8") as f:
-        content = f.read()
-        
-    return {"content": content}
+    # 1. Contenu texte (Manifeste)
+    manifest_path = os.path.join(target_dir, "MANIFESTE_PRODUCTION.txt")
+    manifest_content = ""
+    if os.path.exists(manifest_path):
+        with open(manifest_path, "r", encoding="utf-8") as f:
+            manifest_content = f.read()
+            
+    # 2. Liste des items
+    items = []
+    json_files = glob.glob(os.path.join(target_dir, "*.json"))
+    for jf in json_files:
+        try:
+            with open(jf, "r") as f:
+                data = json.load(f)
+                items.append({
+                    "filename": data.get("filename"),
+                    "status": data.get("status", "Pending")
+                })
+        except: pass
+
+    return {
+        "content": manifest_content,
+        "items": items
+    }
