@@ -2,9 +2,9 @@ import React, { useState, useEffect, Suspense, useMemo, useRef } from 'react';
 import { Canvas, useLoader } from '@react-three/fiber';
 import { OrbitControls, Environment, Bounds, Center, useBounds } from '@react-three/drei';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
-import { useNavigate } from 'react-router-dom'; // For redirection
+import { useNavigate } from 'react-router-dom';
 import { TRANSLATIONS } from '../translations';
-// Make sure to import global CSS or copy relevant content here if needed
+import { MATERIAL_COLORS } from '../constants'; // Import colors
 import '../App.css';
 
 const INFILL_PRESETS = [20, 40, 60, 80];
@@ -30,47 +30,45 @@ const ModelWithAutoFit = React.memo(function ModelWithAutoFit({ url, color }) {
 });
 
 export default function Editor({ lang }) {
-  const navigate = useNavigate(); // Navigation hook
+  const navigate = useNavigate();
   const [fileUrl, setFileUrl] = useState(null);
-  const [fileObject, setFileObject] = useState(null); // Keep raw file for saving
+  const [fileObject, setFileObject] = useState(null);
   
-  // Selection
   const [techKey, setTechKey] = useState("FDM");
   const [materialKey, setMaterialKey] = useState("PLA");
   const [infill, setInfill] = useState(20);
   
-  // Results
   const [volume, setVolume] = useState(null);
-  const [quote, setQuote] = useState({kf: 0, weight: 0 });
+  const [quote, setQuote] = useState({price: 0, weight: 0 }); // Fixed typo 'kf' -> 'price'
   const [isComputing, setIsComputing] = useState(false);
 
   const controlsRef = useRef(null);
   const t = TRANSLATIONS[lang];
 
-  // Dynamic options
+  // Dynamic options using MATERIAL_COLORS
   const printOptions = useMemo(() => {
     return {
       FDM: {
         label: t.tech_fdm,
         materials: [
-          { id: "PLA", name: t.mat_pla, color: "#FF8C00" },
-          { id: "PETG", name: t.mat_petg, color: "#32CD32" },
-          { id: "ABS", name: t.mat_abs, color: "#DC143C" },
-          { id: "TPU", name: t.mat_tpu, color: "#1E90FF" }
+          { id: "PLA", name: t.mat_pla, color: MATERIAL_COLORS.PLA },
+          { id: "PETG", name: t.mat_petg, color: MATERIAL_COLORS.PETG },
+          { id: "ABS", name: t.mat_abs, color: MATERIAL_COLORS.ABS },
+          { id: "TPU", name: t.mat_tpu, color: MATERIAL_COLORS.TPU }
         ]
       },
-      RESIN: { // Backend key name: RESIN_... match mapping
+      RESIN: {
         label: t.tech_resin,
         materials: [
-          { id: "RESIN_STD", name: t.mat_res_std, color: "#808080" },
-          { id: "RESIN_TOUGH", name: t.mat_res_tough, color: "#00CED1" }
+          { id: "RESIN_STD", name: t.mat_res_std, color: MATERIAL_COLORS.RESIN_STD },
+          { id: "RESIN_TOUGH", name: t.mat_res_tough, color: MATERIAL_COLORS.RESIN_TOUGH }
         ]
       },
       SLS: {
         label: t.tech_sls,
         materials: [
-          { id: "NYLON_PA12", name: t.mat_pa12, color: "#E3E3E3" },
-          { id: "NYLON_GLASS", name: t.mat_glass, color: "#F9F9F9" }
+          { id: "NYLON_PA12", name: t.mat_pa12, color: MATERIAL_COLORS.NYLON_PA12 },
+          { id: "NYLON_GLASS", name: t.mat_glass, color: MATERIAL_COLORS.NYLON_GLASS }
         ]
       }
     };
@@ -91,7 +89,7 @@ export default function Editor({ lang }) {
     const file = event.target.files[0];
     if (!file) return;
 
-    setFileObject(file); // Store for future save
+    setFileObject(file);
     setFileUrl(URL.createObjectURL(file));
     setVolume(null);
     setQuote({ price: 0, weight: 0 }); 
@@ -142,7 +140,6 @@ export default function Editor({ lang }) {
     }
   }, [volume, materialKey, infill, techKey]);
 
-  // --- SAVE ---
   const handleSaveToCart = async () => {
     if (!fileObject || !quote.price) return;
 
@@ -175,19 +172,14 @@ export default function Editor({ lang }) {
     }
   };
 
-  const handleZoom = (d) => { /* Zoom code identical */ };
-
   return (
-    // Replaced "app-layout" with specific editor container
     <div className="editor-layout"> 
       <aside className="sidebar">
-        {/* Removed internal header with back button, as Navbar handles it */}
         <div style={{ marginBottom: '20px' }}>
              <h2>{t.config_title}</h2>
              <p style={{fontSize: '0.9rem', color: '#64748b'}}>Configure your manufacturing parameters below.</p>
         </div>
 
-        {/* Updated Form Structure using new CSS classes */}
         <div className="form-group">
           <label className="form-label">{t.section_file}</label>
           <label className="btn btn-secondary" style={{display: 'block', textAlign:'center'}}>
@@ -227,7 +219,6 @@ export default function Editor({ lang }) {
           </div>
         )}
 
-        {/* Price Card */}
         <div className="price-card">
           <div style={{fontSize: '0.9rem', color: '#64748b'}}>{t.est_cost}</div>
           <span className="price-tag">
@@ -246,7 +237,6 @@ export default function Editor({ lang }) {
       </aside>
 
       <main className="viewer-container">
-        {/* Same Canvas Code ... */}
         {!fileUrl && (
             <div className="empty-state" style={{ 
                 position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', 
@@ -257,8 +247,7 @@ export default function Editor({ lang }) {
             </div>
           )}
           <Canvas shadows camera={{ position: [0, 0, 10], fov: 50 }}>
-             {/* ... Canvas Content ... */}
-             <color attach="background" args={['#f1f5f9']} /> {/* Matches new theme */}
+             <color attach="background" args={['#f1f5f9']} />
              <ambientLight intensity={0.7} />
              <spotLight position={[50, 50, 50]} angle={0.25} penumbra={1} castShadow intensity={1} />
              <Environment preset="city" />

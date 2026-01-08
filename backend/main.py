@@ -1,5 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles  #
 from pydantic import BaseModel
 from stl import mesh
 import tempfile
@@ -30,6 +31,9 @@ PROD_DIR = os.path.join(DATA_DIR, "production")
 
 for d in [CART_DIR, PROD_DIR]:
     os.makedirs(d, exist_ok=True)
+
+# SERVE FILES (NEW): Allow frontend to access STL files
+app.mount("/files", StaticFiles(directory=DATA_DIR), name="files")
 
 # Materials Database
 MATERIALS_DB = {
@@ -93,9 +97,8 @@ def calculate_price_endpoint(req: QuoteRequest):
 @app.post("/cart/add")
 async def add_to_cart(
     file: UploadFile = File(...),
-    config: str = Form(...) # We receive the config as stringified JSON
+    config: str = Form(...) 
 ):
-    """Save the file and its config in the CART folder"""
     try:
         conf_dict = json.loads(config)
         item_id = str(uuid.uuid4())
@@ -113,8 +116,8 @@ async def add_to_cart(
         metadata = {
             "id": item_id,
             "filename": original_name,
-            "filepath": file_path,
-            "config": conf_dict, # contains material, infill, tech...
+            "filepath": file_path, # Stores relative path like data/cart/...
+            "config": conf_dict, 
             "added_at": datetime.now().isoformat(),
             "quantity": 1
         }
@@ -129,29 +132,23 @@ async def add_to_cart(
 
 @app.get("/cart")
 def get_cart():
-    """List all items in the CART folder"""
     items = []
-    # Look for all .json files in the cart directory
     json_files = glob.glob(os.path.join(CART_DIR, "*.json"))
     
     for jf in json_files:
         try:
             with open(jf, "r") as f:
                 data = json.load(f)
-                # Security check: verify it's a file created by us
                 if "id" in data and "config" in data:
                     items.append(data)
         except:
             continue
     
-    # Optional: Sort to show newest first
     items.sort(key=lambda x: x.get("added_at", ""), reverse=True)
-    
     return items
 
 @app.post("/cart/update-qty")
 def update_qty(req: UpdateQtyRequest):
-    # Find the corresponding JSON file
     json_files = glob.glob(os.path.join(CART_DIR, f"{req.item_id}_*.json"))
     if not json_files:
         raise HTTPException(status_code=404, detail="Item not found")
@@ -170,14 +167,13 @@ def update_qty(req: UpdateQtyRequest):
     return {"status": "updated"}
 
 @app.post("/cart/delete")
-def delete_item(req: UpdateQtyRequest): # Reusing model just for ID
-    # Find files (STL and JSON)
+def delete_item(req: UpdateQtyRequest):
     json_files = glob.glob(os.path.join(CART_DIR, f"{req.item_id}_*.json"))
     if not json_files:
         return {"status": "not found"}
     
     json_path = json_files[0]
-    stl_path = json_path.replace(".json", "") # Remove .json to get STL
+    stl_path = json_path.replace(".json", "") 
     
     if os.path.exists(json_path): os.remove(json_path)
     if os.path.exists(stl_path): os.remove(stl_path)
@@ -186,12 +182,10 @@ def delete_item(req: UpdateQtyRequest): # Reusing model just for ID
 
 @app.post("/production/launch")
 def launch_production():
-    """Move all CART content to a dated PRODUCTION folder with a summary"""
     items = get_cart()
     if not items:
         raise HTTPException(status_code=400, detail="Cart is empty")
         
-    # Create dated folder
     batch_id = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     batch_dir = os.path.join(PROD_DIR, batch_id)
     os.makedirs(batch_dir, exist_ok=True)
@@ -199,15 +193,12 @@ def launch_production():
     moved_count = 0
     total_parts = 0
     
-    # Prepare summary text file content
     summary_lines = []
     summary_lines.append(f"=== PRODUCTION ORDER : {batch_id} ===\n")
     summary_lines.append(f"Date : {datetime.now().strftime('%Y-%m-%d at %H:%M')}\n")
     summary_lines.append("="*50 + "\n\n")
 
-    # Process each part
     for index, item in enumerate(items, 1):
-        # 1. Move files (STL + JSON)
         src_json = item["filepath"] + ".json"
         src_stl = item["filepath"]
         
@@ -221,7 +212,6 @@ def launch_production():
         qty = item.get("quantity", 1)
         total_parts += qty
         
-        # 2. Add info to summary text
         config = item.get("config", {})
         
         summary_lines.append(f"PART #{index} : {item['filename']}\n")
@@ -229,19 +219,16 @@ def launch_production():
         summary_lines.append(f"   -----------------------------\n")
         summary_lines.append(f"   Technology : {config.get('tech', 'N/A')}\n")
         summary_lines.append(f"   Material   : {config.get('material', 'N/A')}\n")
-        # Display infill only for FDM
         if config.get('tech') == 'FDM':
             summary_lines.append(f"   Infill     : {config.get('infill', 0)}%\n")
         
         summary_lines.append(f"   File ID    : {item['id']}\n")
         summary_lines.append("\n" + "-"*30 + "\n\n")
 
-    # Footer of summary
     summary_lines.append("="*50 + "\n")
     summary_lines.append(f"TOTAL PARTS TO PRODUCE : {total_parts}\n")
     summary_lines.append("="*50 + "\n")
 
-    # Write MANIFEST file
     summary_path = os.path.join(batch_dir, "PRODUCTION_MANIFEST.txt")
     with open(summary_path, "w", encoding="utf-8") as f:
         f.writelines(summary_lines)
@@ -250,7 +237,6 @@ def launch_production():
 
 @app.get("/admin/batches")
 def list_production_batches():
-    """List batches with a status indicator"""
     if not os.path.exists(PROD_DIR):
         return []
     
@@ -258,7 +244,6 @@ def list_production_batches():
     for name in os.listdir(PROD_DIR):
         full_path = os.path.join(PROD_DIR, name)
         if os.path.isdir(full_path):
-            # Calculate global status of the batch
             total = 0
             done = 0
             json_files = glob.glob(os.path.join(full_path, "*.json"))
@@ -288,27 +273,32 @@ def list_production_batches():
 
 @app.get("/admin/batch/{batch_id}")
 def get_batch_details(batch_id: str):
-    """Return manifest details AND the list of files with their status"""
+    """Return manifest and full items with config for detailed history"""
     safe_id = os.path.basename(batch_id)
     target_dir = os.path.join(PROD_DIR, safe_id)
     
-    # 1. Text Content (Manifest)
     manifest_path = os.path.join(target_dir, "PRODUCTION_MANIFEST.txt")
     manifest_content = ""
     if os.path.exists(manifest_path):
         with open(manifest_path, "r", encoding="utf-8") as f:
             manifest_content = f.read()
             
-    # 2. Item List
     items = []
     json_files = glob.glob(os.path.join(target_dir, "*.json"))
     for jf in json_files:
         try:
             with open(jf, "r") as f:
                 data = json.load(f)
+                # Determine the filename of the STL on disk (same basename as json)
+                stl_filename = os.path.basename(jf).replace(".json", "")
+                
                 items.append({
+                    "id": data.get("id"),
                     "filename": data.get("filename"),
-                    "status": data.get("status", "Pending")
+                    "status": data.get("status", "Pending"),
+                    "config": data.get("config", {}),
+                    "quantity": data.get("quantity", 1),
+                    "stl_disk_name": stl_filename # To build URL in frontend
                 })
         except: pass
 

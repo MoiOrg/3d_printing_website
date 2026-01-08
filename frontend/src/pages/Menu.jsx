@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TRANSLATIONS } from '../translations';
+import MiniViewer from '../components/MiniViewer';
+import { MATERIAL_COLORS } from '../constants';
 
 export default function Menu({ lang }) {
   const navigate = useNavigate();
@@ -8,7 +10,6 @@ export default function Menu({ lang }) {
   const [cart, setCart] = useState([]);
   const [totalPrice, setTotalPrice] = useState(0);
 
-  // Load cart on startup
   useEffect(() => {
     fetchCart();
   }, []);
@@ -23,7 +24,6 @@ export default function Menu({ lang }) {
     }
   };
 
-  // Calculate total
   useEffect(() => {
     const total = cart.reduce((sum, item) => {
       return sum + (item.config.price * item.quantity);
@@ -55,12 +55,17 @@ export default function Menu({ lang }) {
     try {
       const res = await fetch("http://localhost:8000/production/launch", { method: "POST" });
       if (res.ok) {
-        setCart([]); // Clear cart visually
-        navigate('/success'); // Redirect to confirmation page
+        setCart([]); 
+        navigate('/success'); 
       }
     } catch (err) {
       alert("Error during launch");
     }
+  };
+
+  const getFileUrl = (item) => {
+      const filename = item.filepath.split(/[/\\]/).pop();
+      return `http://localhost:8000/files/cart/${filename}`;
   };
 
   return (
@@ -94,7 +99,15 @@ export default function Menu({ lang }) {
             <tbody>
               {cart.map((item) => (
                 <tr key={item.id}>
-                  <td><strong>{item.filename}</strong></td>
+                  <td>
+                    <div style={{display:'flex', alignItems:'center', gap:'15px'}}>
+                        <MiniViewer 
+                           url={getFileUrl(item)} 
+                           color={MATERIAL_COLORS[item.config.material]} // PASS COLOR
+                        />
+                        <strong>{item.filename}</strong>
+                    </div>
+                  </td>
                   <td style={{ color: 'var(--text-light)', fontSize: '0.9rem' }}>
                     {item.config.tech} - {item.config.material}
                     {item.config.tech === 'FDM' && (
@@ -108,13 +121,7 @@ export default function Menu({ lang }) {
                       type="number" 
                       value={item.quantity} 
                       onChange={(e) => updateQty(item.id, parseInt(e.target.value))}
-                      style={{ 
-                        width: '60px', 
-                        padding: '5px', 
-                        borderRadius: '4px', 
-                        border: '1px solid var(--border)',
-                        textAlign: 'center'
-                      }}
+                      style={{ width: '60px', padding: '5px', borderRadius: '4px', border: '1px solid var(--border)', textAlign: 'center' }}
                       min="1"
                     />
                   </td>
@@ -122,11 +129,7 @@ export default function Menu({ lang }) {
                     {(item.config.price * item.quantity).toFixed(2)} €
                   </td>
                   <td>
-                    <button 
-                      onClick={() => deleteItem(item.id)}
-                      className="btn btn-danger"
-                      style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-                    >
+                    <button onClick={() => deleteItem(item.id)} className="btn btn-danger" style={{ padding: '6px 12px', fontSize: '0.85rem' }}>
                       {t.btn_delete}
                     </button>
                   </td>
@@ -137,11 +140,7 @@ export default function Menu({ lang }) {
 
           <div className="dashboard-total">
             <h2 style={{ margin: 0, fontSize: '1.5rem' }}>{t.menu_total}: {totalPrice.toFixed(2)} €</h2>
-            <button 
-              onClick={launchProduction}
-              className="btn btn-primary"
-              style={{ padding: '12px 30px', fontSize: '1.1rem' }}
-            >
+            <button onClick={launchProduction} className="btn btn-primary" style={{ padding: '12px 30px', fontSize: '1.1rem' }}>
               🚀 {t.menu_launch}
             </button>
           </div>
