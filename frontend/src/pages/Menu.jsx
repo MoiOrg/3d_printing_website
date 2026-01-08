@@ -64,55 +64,69 @@ export default function Menu({ lang }) {
   };
 
   return (
-    <div style={{ padding: '40px', maxWidth: '1000px', margin: '0 auto' }}>
-      <h1>{t.menu_title}</h1>
-      
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
-        <button className="upload-btn" onClick={() => navigate('/editor')}>
+    <div className="container section">
+      {/* HEADER SECTION: Added margin: 0 to h1 for perfect alignment */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+        <h1 style={{ margin: 0, marginRight: '10px' }}>{t.menu_title}</h1>
+        <button className="btn btn-primary" onClick={() => navigate('/editor')}>
           + {t.menu_add}
         </button>
       </div>
 
       {cart.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '50px', background: '#f8f9fa', borderRadius: '8px' }}>
-          <h3>{t.menu_empty}</h3>
+        <div className="text-center" style={{ padding: '60px', background: 'var(--bg-surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+          <h3 style={{ color: 'var(--text-light)', marginBottom: '20px' }}>{t.menu_empty}</h3>
+          <button className="btn btn-secondary" onClick={() => navigate('/editor')}>
+             {t.menu_add}
+          </button>
         </div>
       ) : (
         <>
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '30px' }}>
+          <table className="dashboard-table">
             <thead>
-              <tr style={{ borderBottom: '2px solid #ddd', textAlign: 'left' }}>
-                <th style={{ padding: '10px' }}>{t.col_name}</th>
-                <th style={{ padding: '10px' }}>{t.col_config}</th>
-                <th style={{ padding: '10px' }}>{t.col_qty}</th>
-                <th style={{ padding: '10px' }}>{t.col_price}</th>
-                <th style={{ padding: '10px' }}>{t.col_actions}</th>
+              <tr>
+                <th>{t.col_name}</th>
+                <th>{t.col_config}</th>
+                <th>{t.col_qty}</th>
+                <th>{t.col_price}</th>
+                <th>{t.col_actions}</th>
               </tr>
             </thead>
             <tbody>
               {cart.map((item) => (
-                <tr key={item.id} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '10px' }}><strong>{item.filename}</strong></td>
-                  <td style={{ padding: '10px', fontSize: '0.9rem', color: '#555' }}>
-                    {item.config.tech} - {item.config.material}<br/>
-                    {item.config.infill}% Infill
+                <tr key={item.id}>
+                  <td><strong>{item.filename}</strong></td>
+                  <td style={{ color: 'var(--text-light)', fontSize: '0.9rem' }}>
+                    {item.config.tech} - {item.config.material}
+                    {item.config.tech === 'FDM' && (
+                      <span style={{ display: 'block', fontSize: '0.8rem', color: '#94a3b8' }}>
+                        {item.config.infill}% Infill
+                      </span>
+                    )}
                   </td>
-                  <td style={{ padding: '10px' }}>
+                  <td>
                     <input 
                       type="number" 
                       value={item.quantity} 
                       onChange={(e) => updateQty(item.id, parseInt(e.target.value))}
-                      style={{ width: '60px', padding: '5px' }}
+                      style={{ 
+                        width: '60px', 
+                        padding: '5px', 
+                        borderRadius: '4px', 
+                        border: '1px solid var(--border)',
+                        textAlign: 'center'
+                      }}
                       min="1"
                     />
                   </td>
-                  <td style={{ padding: '10px' }}>
+                  <td style={{ fontWeight: '600', color: 'var(--primary)' }}>
                     {(item.config.price * item.quantity).toFixed(2)} €
                   </td>
-                  <td style={{ padding: '10px' }}>
+                  <td>
                     <button 
                       onClick={() => deleteItem(item.id)}
-                      style={{ background: '#dc3545', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
+                      className="btn btn-danger"
+                      style={{ padding: '6px 12px', fontSize: '0.85rem' }}
                     >
                       {t.btn_delete}
                     </button>
@@ -122,12 +136,12 @@ export default function Menu({ lang }) {
             </tbody>
           </table>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#e9ecef', padding: '20px', borderRadius: '8px' }}>
-            <h2 style={{ margin: 0 }}>{t.menu_total}: {totalPrice.toFixed(2)} €</h2>
+          <div className="dashboard-total">
+            <h2 style={{ margin: 0, fontSize: '1.5rem' }}>{t.menu_total}: {totalPrice.toFixed(2)} €</h2>
             <button 
               onClick={launchProduction}
-              className="order-btn" 
-              style={{ width: 'auto', padding: '15px 40px' }}
+              className="btn btn-primary"
+              style={{ padding: '12px 30px', fontSize: '1.1rem' }}
             >
               🚀 {t.menu_launch}
             </button>

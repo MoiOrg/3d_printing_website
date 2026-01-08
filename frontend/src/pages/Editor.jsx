@@ -165,8 +165,7 @@ export default function Editor({ lang }) {
         body: formData
       });
       if (res.ok) {
-        // Redirect to menu
-        navigate("/");
+        navigate("/dashboard");
       } else {
         alert("Error saving to cart");
       }
@@ -179,97 +178,100 @@ export default function Editor({ lang }) {
   const handleZoom = (d) => { /* Zoom code identical */ };
 
   return (
-    <div className="app-layout" style={{ height: 'calc(100vh - 60px)' }}> {/* Height adjustment if external header */}
-      
-      {/* Simple back button in sidebar or local header */}
-      
-      <div className="main-content">
-        <aside className="sidebar">
-          <div className="sidebar-header" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <button onClick={() => navigate("/")} style={{ border:'none', background:'transparent', cursor:'pointer', fontSize:'1.2rem'}}>⬅️</button>
-            <h2>{t.config_title}</h2>
-          </div>
+    // Replaced "app-layout" with specific editor container
+    <div className="editor-layout"> 
+      <aside className="sidebar">
+        {/* Removed internal header with back button, as Navbar handles it */}
+        <div style={{ marginBottom: '20px' }}>
+             <h2>{t.config_title}</h2>
+             <p style={{fontSize: '0.9rem', color: '#64748b'}}>Configure your manufacturing parameters below.</p>
+        </div>
 
-          <div className="form-section">
-            <label className="label-title">{t.section_file}</label>
-            <label className="upload-btn">
-              {fileUrl ? t.btn_change : t.btn_import}
-              <input type="file" accept=".stl" onChange={handleFileUpload} style={{ display: 'none' }} />
-            </label>
-          </div>
+        {/* Updated Form Structure using new CSS classes */}
+        <div className="form-group">
+          <label className="form-label">{t.section_file}</label>
+          <label className="btn btn-secondary" style={{display: 'block', textAlign:'center'}}>
+            {fileUrl ? t.btn_change : t.btn_import}
+            <input type="file" accept=".stl" onChange={handleFileUpload} style={{ display: 'none' }} />
+          </label>
+        </div>
 
-          <div className="form-section">
-            <label className="label-title">{t.section_tech}</label>
-            <select className="select-input" value={techKey} onChange={(e) => handleTechChange(e.target.value)}>
-              {Object.keys(printOptions).map(key => (
-                <option key={key} value={key}>{printOptions[key].label}</option>
+        <div className="form-group">
+          <label className="form-label">{t.section_tech}</label>
+          <select className="form-select" value={techKey} onChange={(e) => handleTechChange(e.target.value)}>
+            {Object.keys(printOptions).map(key => (
+              <option key={key} value={key}>{printOptions[key].label}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">{t.section_mat}</label>
+          <select className="form-select" value={materialKey} onChange={(e) => setMaterialKey(e.target.value)}>
+            {printOptions[techKey].materials.map(mat => (
+              <option key={mat.id} value={mat.id}>{mat.name}</option>
+            ))}
+          </select>
+        </div>
+
+        {techKey === "FDM" && (
+          <div className="form-group">
+            <label className="form-label">{t.section_infill}</label>
+            <div className="infill-options">
+              {INFILL_PRESETS.map((val) => (
+                <button key={val} className={`infill-btn ${infill === val ? 'active' : ''}`} onClick={() => setInfill(val)}>
+                  {val}%
+                </button>
               ))}
-            </select>
+            </div>
           </div>
+        )}
 
-          <div className="form-section">
-            <label className="label-title">{t.section_mat}</label>
-            <select className="select-input" value={materialKey} onChange={(e) => setMaterialKey(e.target.value)}>
-              {printOptions[techKey].materials.map(mat => (
-                <option key={mat.id} value={mat.id}>{mat.name}</option>
-              ))}
-            </select>
-          </div>
-
-          {techKey === "FDM" && (
-            <div className="form-section">
-              <label className="label-title">{t.section_infill}</label>
-              <div className="infill-grid">
-                {INFILL_PRESETS.map((val) => (
-                  <button key={val} className={`infill-btn ${infill === val ? 'active' : ''}`} onClick={() => setInfill(val)}>
-                    {val}%
-                  </button>
-                ))}
-              </div>
+        {/* Price Card */}
+        <div className="price-card">
+          <div style={{fontSize: '0.9rem', color: '#64748b'}}>{t.est_cost}</div>
+          <span className="price-tag">
+            {isComputing ? "..." : (quote.price > 0 ? `${quote.price} €` : "-- €")}
+          </span>
+          {quote.weight > 0 && (
+            <div style={{ fontSize: '0.85rem', color: '#475569', marginBottom: '15px' }}>
+              {t.weight}: {quote.weight} g | {t.vol}: {Math.round(volume)} cm³
             </div>
           )}
+          
+          <button className="btn btn-primary" style={{width: '100%'}} disabled={!quote.price || isComputing} onClick={handleSaveToCart}>
+            {t.btn_save}
+          </button>
+        </div>
+      </aside>
 
-          <div className="price-box">
-            <div className="price-label">{t.est_cost}</div>
-            <h2 className="price-value">
-              {isComputing ? <span className="loader-dots">...</span> : (quote.price > 0 ? `${quote.price} €` : "-- €")}
-            </h2>
-            {quote.weight > 0 && (
-              <div className="price-details">
-                {t.weight}: {quote.weight} g<br/>
-                {t.vol}: {Math.round(volume)} cm³
-              </div>
-            )}
-            
-            <button className="order-btn" disabled={!quote.price || isComputing} onClick={handleSaveToCart}>
-              {t.btn_save}
-            </button>
-          </div>
-        </aside>
-
-        <main className="viewer-container">
-          {!fileUrl && (
-            <div className="empty-state">
-              <h2>{t.empty_title}</h2>
-              <p>{t.empty_desc}</p>
+      <main className="viewer-container">
+        {/* Same Canvas Code ... */}
+        {!fileUrl && (
+            <div className="empty-state" style={{ 
+                position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', 
+                textAlign: 'center', pointerEvents: 'none', zIndex: 10 
+            }}>
+              <h2 style={{color: '#94a3b8'}}>{t.empty_title}</h2>
+              <p style={{color: '#cbd5e1'}}>{t.empty_desc}</p>
             </div>
           )}
           <Canvas shadows camera={{ position: [0, 0, 10], fov: 50 }}>
-            <color attach="background" args={['#e0e0e0']} />
-            <ambientLight intensity={0.7} />
-            <spotLight position={[50, 50, 50]} angle={0.25} penumbra={1} castShadow intensity={1} />
-            <Environment preset="city" />
-            <Suspense fallback={null}>
-              {fileUrl && (
-                <Bounds key={fileUrl} margin={1.2}>
-                  <ModelWithAutoFit url={fileUrl} color={currentMaterialColor} />
-                </Bounds>
-              )}
-            </Suspense>
-            <OrbitControls ref={controlsRef} makeDefault minPolarAngle={0} maxPolarAngle={Math.PI} minDistance={10} maxDistance={400} />
+             {/* ... Canvas Content ... */}
+             <color attach="background" args={['#f1f5f9']} /> {/* Matches new theme */}
+             <ambientLight intensity={0.7} />
+             <spotLight position={[50, 50, 50]} angle={0.25} penumbra={1} castShadow intensity={1} />
+             <Environment preset="city" />
+             <Suspense fallback={null}>
+               {fileUrl && (
+                 <Bounds key={fileUrl} margin={1.2}>
+                   <ModelWithAutoFit url={fileUrl} color={currentMaterialColor} />
+                 </Bounds>
+               )}
+             </Suspense>
+             <OrbitControls ref={controlsRef} makeDefault minPolarAngle={0} maxPolarAngle={Math.PI} minDistance={10} maxDistance={400} />
           </Canvas>
-        </main>
-      </div>
+      </main>
     </div>
   );
 }
