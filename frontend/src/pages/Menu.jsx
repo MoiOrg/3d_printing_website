@@ -55,8 +55,8 @@ export default function Menu({ lang }) {
     try {
       const res = await fetch("http://localhost:8000/production/launch", { method: "POST" });
       if (res.ok) {
-        alert("Production launched! The folder has been sent to the factory.");
         setCart([]); // Clear cart visually
+        navigate('/success'); // Redirect to confirmation page
       }
     } catch (err) {
       alert("Error during launch");
@@ -65,7 +65,6 @@ export default function Menu({ lang }) {
 
   return (
     <div className="container section">
-      {/* HEADER SECTION: Added margin: 0 to h1 for perfect alignment */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
         <h1 style={{ margin: 0, marginRight: '10px' }}>{t.menu_title}</h1>
         <button className="btn btn-primary" onClick={() => navigate('/editor')}>

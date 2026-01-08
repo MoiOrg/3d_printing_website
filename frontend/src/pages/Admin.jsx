@@ -46,8 +46,9 @@ export default function Admin({ lang }) {
     <div style={{ padding: '20px', height: 'calc(100vh - 80px)', display: 'flex', flexDirection: 'column' }}>
       <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1>🛡️ {t.admin_title || "Admin"}</h1>
-        <button onClick={() => navigate("/")} className="upload-btn" style={{ background: '#6c757d' }}>
-          {t.admin_back || "Back"}
+        {/* Changed from inline style to standard btn-secondary class */}
+        <button onClick={() => navigate("/")} className="btn btn-secondary">
+          {t.admin_back || "Back to Site"}
         </button>
       </div>
 
