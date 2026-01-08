@@ -7,7 +7,7 @@ import { TRANSLATIONS } from './translations';
 import './App.css';
 
 function App() {
-  const [lang, setLang] = useState('FR');
+  const [lang, setLang] = useState('EN'); 
   const t = TRANSLATIONS[lang];
 
   return (
@@ -19,7 +19,6 @@ function App() {
               {t.title}
             </Link>
             
-            {/* Petit lien discret vers l'admin */}
             <Link to="/admin" style={{ fontSize: '0.8rem', color: '#ffffff80', textDecoration: 'none' }}>
               [Admin]
             </Link>
@@ -28,7 +27,6 @@ function App() {
           <div className="navbar-actions">
             <div className="lang-select">
               <select value={lang} onChange={(e) => setLang(e.target.value)}>
-                <option value="FR">🇫🇷 FR</option>
                 <option value="EN">🇬🇧 EN</option>
                 <option value="CN">🇨🇳 CN</option>
               </select>
@@ -36,12 +34,9 @@ function App() {
           </div>
         </header>
 
-        {/* --- C'EST ICI QUE L'ERREUR SE TROUVE SOUVENT --- */}
         <Routes>
           <Route path="/" element={<Menu lang={lang} />} />
           <Route path="/editor" element={<Editor lang={lang} />} />
-          
-          {/* ✅ 2. Avez-vous bien ajouté cette ligne ? */}
           <Route path="/admin" element={<Admin lang={lang} />} /> 
         </Routes>
 

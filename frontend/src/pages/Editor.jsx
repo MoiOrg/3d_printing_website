@@ -2,14 +2,14 @@ import React, { useState, useEffect, Suspense, useMemo, useRef } from 'react';
 import { Canvas, useLoader } from '@react-three/fiber';
 import { OrbitControls, Environment, Bounds, Center, useBounds } from '@react-three/drei';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
-import { useNavigate } from 'react-router-dom'; // Pour la redirection
+import { useNavigate } from 'react-router-dom'; // For redirection
 import { TRANSLATIONS } from '../translations';
-// Assurez-vous d'importer le CSS global ou copiez le contenu pertinent ici si besoin
+// Make sure to import global CSS or copy relevant content here if needed
 import '../App.css';
 
 const INFILL_PRESETS = [20, 40, 60, 80];
 
-// --- COMPOSANTS 3D ---
+// --- 3D COMPONENTS ---
 function Model({ url, color }) {
   const geometry = useLoader(STLLoader, url);
   return (
@@ -30,16 +30,16 @@ const ModelWithAutoFit = React.memo(function ModelWithAutoFit({ url, color }) {
 });
 
 export default function Editor({ lang }) {
-  const navigate = useNavigate(); // Hook de navigation
+  const navigate = useNavigate(); // Navigation hook
   const [fileUrl, setFileUrl] = useState(null);
-  const [fileObject, setFileObject] = useState(null); // On garde le fichier brut pour l'envoyer au save
+  const [fileObject, setFileObject] = useState(null); // Keep raw file for saving
   
-  // Sélection
+  // Selection
   const [techKey, setTechKey] = useState("FDM");
   const [materialKey, setMaterialKey] = useState("PLA");
   const [infill, setInfill] = useState(20);
   
-  // Résultats
+  // Results
   const [volume, setVolume] = useState(null);
   const [quote, setQuote] = useState({kf: 0, weight: 0 });
   const [isComputing, setIsComputing] = useState(false);
@@ -47,7 +47,7 @@ export default function Editor({ lang }) {
   const controlsRef = useRef(null);
   const t = TRANSLATIONS[lang];
 
-  // Options dynamiques
+  // Dynamic options
   const printOptions = useMemo(() => {
     return {
       FDM: {
@@ -59,11 +59,11 @@ export default function Editor({ lang }) {
           { id: "TPU", name: t.mat_tpu, color: "#1E90FF" }
         ]
       },
-      RESIN: { // Nom clé backend: RESINE_... attention au mapping
+      RESIN: { // Backend key name: RESIN_... match mapping
         label: t.tech_resin,
         materials: [
-          { id: "RESINE_STD", name: t.mat_res_std, color: "#808080" },
-          { id: "RESINE_TOUGH", name: t.mat_res_tough, color: "#00CED1" }
+          { id: "RESIN_STD", name: t.mat_res_std, color: "#808080" },
+          { id: "RESIN_TOUGH", name: t.mat_res_tough, color: "#00CED1" }
         ]
       },
       SLS: {
@@ -91,7 +91,7 @@ export default function Editor({ lang }) {
     const file = event.target.files[0];
     if (!file) return;
 
-    setFileObject(file); // Stockage pour sauvegarde future
+    setFileObject(file); // Store for future save
     setFileUrl(URL.createObjectURL(file));
     setVolume(null);
     setQuote({ price: 0, weight: 0 }); 
@@ -112,7 +112,7 @@ export default function Editor({ lang }) {
         setIsComputing(false);
       }
     } catch (error) {
-      console.error("Erreur upload:", error);
+      console.error("Upload error:", error);
       setIsComputing(false);
     }
   };
@@ -142,7 +142,7 @@ export default function Editor({ lang }) {
     }
   }, [volume, materialKey, infill, techKey]);
 
-  // --- SAUVEGARDE ---
+  // --- SAVE ---
   const handleSaveToCart = async () => {
     if (!fileObject || !quote.price) return;
 
@@ -165,23 +165,23 @@ export default function Editor({ lang }) {
         body: formData
       });
       if (res.ok) {
-        // Redirection vers le menu
+        // Redirect to menu
         navigate("/");
       } else {
-        alert("Erreur lors de la sauvegarde");
+        alert("Error saving to cart");
       }
     } catch (e) {
       console.error(e);
-      alert("Erreur réseau");
+      alert("Network error");
     }
   };
 
-  const handleZoom = (d) => { /* Code zoom identique */ };
+  const handleZoom = (d) => { /* Zoom code identical */ };
 
   return (
-    <div className="app-layout" style={{ height: 'calc(100vh - 60px)' }}> {/* Ajustement hauteur si header externe */}
+    <div className="app-layout" style={{ height: 'calc(100vh - 60px)' }}> {/* Height adjustment if external header */}
       
-      {/* Bouton retour simple dans la sidebar ou header local */}
+      {/* Simple back button in sidebar or local header */}
       
       <div className="main-content">
         <aside className="sidebar">

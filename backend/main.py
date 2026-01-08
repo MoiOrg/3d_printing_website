@@ -23,7 +23,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Dossiers de stockage
+# Storage directories
 DATA_DIR = "data"
 CART_DIR = os.path.join(DATA_DIR, "cart")
 PROD_DIR = os.path.join(DATA_DIR, "production")
@@ -31,16 +31,16 @@ PROD_DIR = os.path.join(DATA_DIR, "production")
 for d in [CART_DIR, PROD_DIR]:
     os.makedirs(d, exist_ok=True)
 
-# Base de données Matériaux (inchangée)
+# Materials Database (Keys updated to English)
 MATERIALS_DB = {
     "PLA":  {"density": 1.24, "price": 0.05},
     "PETG": {"density": 1.27, "price": 0.06},
     "ABS":  {"density": 1.04, "price": 0.055},
     "TPU":  {"density": 1.21, "price": 0.08},
-    "RESINE_STD":   {"density": 1.12, "price": 0.12},
-    "RESINE_TOUGH": {"density": 1.18, "price": 0.15},
-    "NYLON_PA12":   {"density": 0.95, "price": 0.18},
-    "NYLON_GLASS":  {"density": 1.10, "price": 0.22},
+    "RESIN_STD":   {"density": 1.12, "price": 0.12},   # Was RESINE_STD
+    "RESIN_TOUGH": {"density": 1.18, "price": 0.15},   # Was RESINE_TOUGH
+    "NYLON_PA12":  {"density": 0.95, "price": 0.18},
+    "NYLON_GLASS": {"density": 1.10, "price": 0.22},
 }
 MARGIN = 2.00 
 
@@ -53,7 +53,7 @@ class UpdateQtyRequest(BaseModel):
     item_id: str
     quantity: int
 
-# --- LOGIQUE MÉTIER ---
+# --- BUSINESS LOGIC ---
 
 def compute_price_logic(volume_cm3, material_name, infill_percent):
     if material_name not in MATERIALS_DB:
@@ -69,7 +69,7 @@ def compute_price_logic(volume_cm3, material_name, infill_percent):
 
 @app.post("/analyze-file")
 async def analyze_file(file: UploadFile = File(...)):
-    # Analyse temporaire seulement
+    # Temporary analysis only
     with tempfile.NamedTemporaryFile(delete=False, suffix=".stl") as tmp:
         tmp.write(await file.read())
         tmp_path = tmp.name
@@ -87,20 +87,20 @@ async def analyze_file(file: UploadFile = File(...)):
 def calculate_price_endpoint(req: QuoteRequest):
     price, weight = compute_price_logic(req.volume_cm3, req.material, req.infill)
     if price is None:
-        raise HTTPException(status_code=400, detail="Matériau inconnu")
+        raise HTTPException(status_code=400, detail="Unknown material")
     return {"price": price, "weight_g": weight}
 
 @app.post("/cart/add")
 async def add_to_cart(
     file: UploadFile = File(...),
-    config: str = Form(...) # On reçoit la config en JSON stringifié
+    config: str = Form(...) # We receive the config as stringified JSON
 ):
-    """Sauvegarde le fichier et sa config dans le dossier CART"""
+    """Save the file and its config in the CART folder"""
     try:
         conf_dict = json.loads(config)
         item_id = str(uuid.uuid4())
         
-        # 1. Sauvegarder le STL
+        # 1. Save the STL
         original_name = file.filename
         safe_name = f"{item_id}_{original_name}"
         file_path = os.path.join(CART_DIR, safe_name)
@@ -108,13 +108,13 @@ async def add_to_cart(
         with open(file_path, "wb") as f:
             f.write(await file.read())
             
-        # 2. Sauvegarder les métadonnées (JSON)
+        # 2. Save metadata (JSON)
         meta_path = file_path + ".json"
         metadata = {
             "id": item_id,
             "filename": original_name,
             "filepath": file_path,
-            "config": conf_dict, # contient material, infill, tech...
+            "config": conf_dict, # contains material, infill, tech...
             "added_at": datetime.now().isoformat(),
             "quantity": 1
         }
@@ -129,29 +129,29 @@ async def add_to_cart(
 
 @app.get("/cart")
 def get_cart():
-    """Liste tous les items dans le dossier CART"""
+    """List all items in the CART folder"""
     items = []
-    # CORRECTION : On cherche tous les fichiers .json, peu importe la casse ou l'extension précédente
+    # FIX: We look for all .json files
     json_files = glob.glob(os.path.join(CART_DIR, "*.json"))
     
     for jf in json_files:
         try:
             with open(jf, "r") as f:
                 data = json.load(f)
-                # On ajoute une sécurité : on vérifie que c'est bien un fichier créé par nous
+                # Security check: verify it's a file created by us
                 if "id" in data and "config" in data:
                     items.append(data)
         except:
             continue
     
-    # Optionnel : Trier pour afficher les plus récents en premier
+    # Optional: Sort to show newest first
     items.sort(key=lambda x: x.get("added_at", ""), reverse=True)
     
     return items
 
 @app.post("/cart/update-qty")
 def update_qty(req: UpdateQtyRequest):
-    # Trouver le fichier JSON correspondant
+    # Find the corresponding JSON file
     json_files = glob.glob(os.path.join(CART_DIR, f"{req.item_id}_*.json"))
     if not json_files:
         raise HTTPException(status_code=404, detail="Item not found")
@@ -170,14 +170,14 @@ def update_qty(req: UpdateQtyRequest):
     return {"status": "updated"}
 
 @app.post("/cart/delete")
-def delete_item(req: UpdateQtyRequest): # On réutilise le modèle juste pour l'ID
-    # Trouver les fichiers (STL et JSON)
+def delete_item(req: UpdateQtyRequest): # Reusing model just for ID
+    # Find files (STL and JSON)
     json_files = glob.glob(os.path.join(CART_DIR, f"{req.item_id}_*.json"))
     if not json_files:
         return {"status": "not found"}
     
     json_path = json_files[0]
-    stl_path = json_path.replace(".json", "") # Retirer le .json pour avoir le STL
+    stl_path = json_path.replace(".json", "") # Remove .json to get STL
     
     if os.path.exists(json_path): os.remove(json_path)
     if os.path.exists(stl_path): os.remove(stl_path)
@@ -186,12 +186,12 @@ def delete_item(req: UpdateQtyRequest): # On réutilise le modèle juste pour l'
 
 @app.post("/production/launch")
 def launch_production():
-    """Déplace tout le contenu du CART vers un dossier PRODUCTION daté avec un résumé"""
+    """Move all CART content to a dated PRODUCTION folder with a summary"""
     items = get_cart()
     if not items:
         raise HTTPException(status_code=400, detail="Cart is empty")
         
-    # Création du dossier daté
+    # Create dated folder
     batch_id = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     batch_dir = os.path.join(PROD_DIR, batch_id)
     os.makedirs(batch_dir, exist_ok=True)
@@ -199,15 +199,15 @@ def launch_production():
     moved_count = 0
     total_parts = 0
     
-    # Préparation du contenu du fichier texte de résumé
+    # Prepare summary text file content
     summary_lines = []
-    summary_lines.append(f"=== ORDRE DE PRODUCTION : {batch_id} ===\n")
-    summary_lines.append(f"Date : {datetime.now().strftime('%d/%m/%Y à %H:%M')}\n")
+    summary_lines.append(f"=== PRODUCTION ORDER : {batch_id} ===\n")
+    summary_lines.append(f"Date : {datetime.now().strftime('%Y-%m-%d at %H:%M')}\n")
     summary_lines.append("="*50 + "\n\n")
 
-    # Traitement de chaque pièce
+    # Process each part
     for index, item in enumerate(items, 1):
-        # 1. Déplacement des fichiers (STL + JSON)
+        # 1. Move files (STL + JSON)
         src_json = item["filepath"] + ".json"
         src_stl = item["filepath"]
         
@@ -221,28 +221,28 @@ def launch_production():
         qty = item.get("quantity", 1)
         total_parts += qty
         
-        # 2. Ajout des infos dans le résumé texte
+        # 2. Add info to summary text
         config = item.get("config", {})
         
-        summary_lines.append(f"PIÈCE #{index} : {item['filename']}\n")
-        summary_lines.append(f"   [x{qty}] QUANTITÉ À IMPRIMER\n")
+        summary_lines.append(f"PART #{index} : {item['filename']}\n")
+        summary_lines.append(f"   [x{qty}] QUANTITY TO PRINT\n")
         summary_lines.append(f"   -----------------------------\n")
-        summary_lines.append(f"   Technologie : {config.get('tech', 'N/A')}\n")
-        summary_lines.append(f"   Matériau    : {config.get('material', 'N/A')}\n")
-        # On affiche l'infill seulement pour le FDM
+        summary_lines.append(f"   Technology : {config.get('tech', 'N/A')}\n")
+        summary_lines.append(f"   Material   : {config.get('material', 'N/A')}\n")
+        # Display infill only for FDM
         if config.get('tech') == 'FDM':
-            summary_lines.append(f"   Remplissage : {config.get('infill', 0)}%\n")
+            summary_lines.append(f"   Infill     : {config.get('infill', 0)}%\n")
         
-        summary_lines.append(f"   ID Fichier  : {item['id']}\n")
+        summary_lines.append(f"   File ID    : {item['id']}\n")
         summary_lines.append("\n" + "-"*30 + "\n\n")
 
-    # Pied de page du résumé
+    # Footer of summary
     summary_lines.append("="*50 + "\n")
-    summary_lines.append(f"TOTAL PIÈCES À PRODUIRE : {total_parts}\n")
+    summary_lines.append(f"TOTAL PARTS TO PRODUCE : {total_parts}\n")
     summary_lines.append("="*50 + "\n")
 
-    # Écriture du fichier MANIFESTE.txt
-    summary_path = os.path.join(batch_dir, "MANIFESTE_PRODUCTION.txt")
+    # Write MANIFEST file
+    summary_path = os.path.join(batch_dir, "PRODUCTION_MANIFEST.txt")
     with open(summary_path, "w", encoding="utf-8") as f:
         f.writelines(summary_lines)
         
@@ -250,7 +250,7 @@ def launch_production():
 
 @app.get("/admin/batches")
 def list_production_batches():
-    """Liste les lots avec un indicateur de statut"""
+    """List batches with a status indicator"""
     if not os.path.exists(PROD_DIR):
         return []
     
@@ -258,7 +258,7 @@ def list_production_batches():
     for name in os.listdir(PROD_DIR):
         full_path = os.path.join(PROD_DIR, name)
         if os.path.isdir(full_path):
-            # Calculer le statut global du lot
+            # Calculate global status of the batch
             total = 0
             done = 0
             json_files = glob.glob(os.path.join(full_path, "*.json"))
@@ -288,18 +288,18 @@ def list_production_batches():
 
 @app.get("/admin/batch/{batch_id}")
 def get_batch_details(batch_id: str):
-    """Renvoie les détails du manifest ET la liste des fichiers avec leur statut"""
+    """Return manifest details AND the list of files with their status"""
     safe_id = os.path.basename(batch_id)
     target_dir = os.path.join(PROD_DIR, safe_id)
     
-    # 1. Contenu texte (Manifeste)
-    manifest_path = os.path.join(target_dir, "MANIFESTE_PRODUCTION.txt")
+    # 1. Text Content (Manifest)
+    manifest_path = os.path.join(target_dir, "PRODUCTION_MANIFEST.txt")
     manifest_content = ""
     if os.path.exists(manifest_path):
         with open(manifest_path, "r", encoding="utf-8") as f:
             manifest_content = f.read()
             
-    # 2. Liste des items
+    # 2. Item List
     items = []
     json_files = glob.glob(os.path.join(target_dir, "*.json"))
     for jf in json_files:

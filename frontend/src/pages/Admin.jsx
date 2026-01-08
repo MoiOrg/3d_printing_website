@@ -26,13 +26,13 @@ export default function Admin({ lang }) {
 
   const loadBatchDetails = async (batchId) => {
     setSelectedBatchId(batchId);
-    setBatchData({ content: "Chargement...", items: [] });
+    setBatchData({ content: "Loading...", items: [] });
     try {
       const res = await fetch(`http://localhost:8000/admin/batch/${batchId}`);
       const data = await res.json();
       setBatchData(data);
     } catch (e) {
-      setBatchData({ content: "Erreur de chargement", items: [] });
+      setBatchData({ content: "Load error", items: [] });
     }
   };
 
@@ -52,7 +52,7 @@ export default function Admin({ lang }) {
       </div>
 
       <div style={{ display: 'flex', gap: '20px', flex: 1, overflow: 'hidden' }}>
-        {/* Colonne de gauche : Liste */}
+        {/* Left column: List */}
         <div style={{ width: '350px', overflowY: 'auto', borderRight: '1px solid #ddd', paddingRight: '10px' }}>
           <h3>{t.admin_batches || "Batches"}</h3>
           <ul style={{ listStyle: 'none', padding: 0 }}>
@@ -90,10 +90,10 @@ export default function Admin({ lang }) {
           </ul>
         </div>
 
-        {/* Colonne de droite : Détails */}
+        {/* Right column: Details */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
           
-          {/* Liste des pièces et statut */}
+          {/* Part list and status */}
           <div style={{ padding: '15px', background: 'white', border: '1px solid #ddd', borderRadius: '8px', maxHeight: '200px', overflowY: 'auto' }}>
             <h4>Production Status</h4>
             {batchData.items.length > 0 ? (
@@ -112,7 +112,7 @@ export default function Admin({ lang }) {
             ) : <p style={{ color: '#888' }}>Select a batch to see items.</p>}
           </div>
 
-          {/* Manifeste Texte */}
+          {/* Text Manifest */}
           <div style={{ flex: 1, background: '#1e1e1e', color: '#00ff00', padding: '20px', borderRadius: '8px', overflowY: 'auto', fontFamily: 'monospace' }}>
             {selectedBatchId ? (
               <pre style={{ whiteSpace: 'pre-wrap' }}>{batchData.content}</pre>

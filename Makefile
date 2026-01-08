@@ -1,6 +1,6 @@
 init:
 	mkdir -p backend frontend
-	# Utilisation de Node 22 et ajout de 'yes' pour éviter l'interaction bloquante
+	# Use Node 22 and add 'yes' to avoid blocking interaction
 	docker run --rm -v $(PWD)/frontend:/app -w /app node:22-alpine sh -c "if [ ! -f package.json ]; then npm create vite@latest . -- --template react --yes; npm install; fi"
 
 up:

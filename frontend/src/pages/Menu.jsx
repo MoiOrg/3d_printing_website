@@ -8,7 +8,7 @@ export default function Menu({ lang }) {
   const [cart, setCart] = useState([]);
   const [totalPrice, setTotalPrice] = useState(0);
 
-  // Charger le panier au démarrage
+  // Load cart on startup
   useEffect(() => {
     fetchCart();
   }, []);
@@ -19,11 +19,11 @@ export default function Menu({ lang }) {
       const data = await res.json();
       setCart(data);
     } catch (err) {
-      console.error("Erreur chargement panier", err);
+      console.error("Error loading cart", err);
     }
   };
 
-  // Calcul du total
+  // Calculate total
   useEffect(() => {
     const total = cart.reduce((sum, item) => {
       return sum + (item.config.price * item.quantity);
@@ -55,11 +55,11 @@ export default function Menu({ lang }) {
     try {
       const res = await fetch("http://localhost:8000/production/launch", { method: "POST" });
       if (res.ok) {
-        alert("Production lancée ! Le dossier a été envoyé à l'usine.");
-        setCart([]); // Vider le panier visuellement
+        alert("Production launched! The folder has been sent to the factory.");
+        setCart([]); // Clear cart visually
       }
     } catch (err) {
-      alert("Erreur lors du lancement");
+      alert("Error during launch");
     }
   };
 

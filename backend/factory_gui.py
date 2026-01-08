@@ -20,7 +20,7 @@ class ProductionManagerApp:
         self.root.title("Production Factory Interface")
         self.root.geometry("1100x700")
         
-        # Dictionnaire pour mapper les ID des items de l'arbre vers les chemins de fichiers
+        # Dictionary to map tree item IDs to file paths
         self.part_map = {} 
         
         # Styles
@@ -186,7 +186,7 @@ class ProductionManagerApp:
                     config = data.get('config', {})
                     status = data.get('status', 'Pending') # Default to Pending
                     
-                    # CORRECTION ICI: On n'utilise plus data=...
+                    # CORRECTION HERE: We don't use data=... anymore
                     item_id = self.part_tree.insert("", tk.END, values=(
                         data.get('filename', 'Unknown'),
                         config.get('tech', 'N/A'),
@@ -195,7 +195,7 @@ class ProductionManagerApp:
                         status
                     ), tags=(status,))
                     
-                    # On stocke le chemin dans le dictionnaire
+                    # Store the path in the dictionary
                     self.part_map[item_id] = full_path
                     
             except Exception as e:
@@ -210,7 +210,7 @@ class ProductionManagerApp:
         
         item_id = selected_item[0]
         
-        # CORRECTION ICI: On récupère le chemin depuis le dictionnaire
+        # CORRECTION HERE: Retrieve path from dictionary
         full_path = self.part_map.get(item_id)
         
         if not full_path: return

@@ -3,7 +3,7 @@
   line-height: 1.5;
   font-weight: 400;
   
-  /* Couleurs de base */
+  /* Base colors */
   color: #213547;
   background-color: #ffffff;
 
@@ -13,22 +13,22 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* LE FIX EST ICI : On force le body à prendre toute la place */
+/* FIX IS HERE: Force body to take full space */
 body {
   margin: 0;
   padding: 0;
   width: 100vw;
   height: 100vh;
-  display: block; /* Surtout pas de flex ici */
+  display: block; /* Do not use flex here */
 }
 
-/* On s'assure que la "racine" de React prend aussi toute la place */
+/* Ensure React root also takes full space */
 #root {
   width: 100%;
   height: 100%;
   margin: 0;
   padding: 0;
-  max-width: none; /* Important pour annuler la limite par défaut de Vite */
+  max-width: none; /* Important to cancel Vite default limit */
 }
 
 a {
