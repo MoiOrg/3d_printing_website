@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles  #
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from stl import mesh
 import tempfile
@@ -13,7 +13,7 @@ from datetime import datetime
 
 app = FastAPI()
 
-# --- CONFIGURATION ---
+# --- Configuration & Setup ---
 origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
 
 app.add_middleware(
@@ -24,7 +24,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Storage directories
+# Define and create storage directories
 DATA_DIR = "data"
 CART_DIR = os.path.join(DATA_DIR, "cart")
 PROD_DIR = os.path.join(DATA_DIR, "production")
@@ -32,10 +32,10 @@ PROD_DIR = os.path.join(DATA_DIR, "production")
 for d in [CART_DIR, PROD_DIR]:
     os.makedirs(d, exist_ok=True)
 
-# SERVE FILES (NEW): Allow frontend to access STL files
+# Mount static files for frontend access to STLs
 app.mount("/files", StaticFiles(directory=DATA_DIR), name="files")
 
-# Materials Database
+# --- Business Data ---
 MATERIALS_DB = {
     "PLA":  {"density": 1.24, "price": 0.05},
     "PETG": {"density": 1.27, "price": 0.06},
@@ -57,23 +57,34 @@ class UpdateQtyRequest(BaseModel):
     item_id: str
     quantity: int
 
-# --- BUSINESS LOGIC ---
+# --- Helper Functions ---
 
 def compute_price_logic(volume_cm3, material_name, infill_percent):
+    """
+    Calculates the estimated price and weight based on volume, material density, 
+    and infill percentage. Includes a fixed margin.
+    """
     if material_name not in MATERIALS_DB:
         return None, None
     mat_info = MATERIALS_DB[material_name]
+    
+    # Estimate effective volume based on shell vs infill ratio
     shell_ratio = 0.20
     effective_volume = (volume_cm3 * shell_ratio) + (volume_cm3 * (1 - shell_ratio) * (infill_percent / 100))
+    
     weight_g = effective_volume * mat_info["density"]
     price = (weight_g * mat_info["price"]) + MARGIN
+    
     return round(price, 2), round(weight_g, 2)
 
-# --- ROUTES ---
+# --- API Routes ---
 
 @app.post("/analyze-file")
 async def analyze_file(file: UploadFile = File(...)):
-    # Temporary analysis only
+    """
+    Analyzes an uploaded STL file to extract volume.
+    Uses a temporary file to process the mesh safely.
+    """
     with tempfile.NamedTemporaryFile(delete=False, suffix=".stl") as tmp:
         tmp.write(await file.read())
         tmp_path = tmp.name
@@ -95,15 +106,15 @@ def calculate_price_endpoint(req: QuoteRequest):
     return {"price": price, "weight_g": weight}
 
 @app.post("/cart/add")
-async def add_to_cart(
-    file: UploadFile = File(...),
-    config: str = Form(...) 
-):
+async def add_to_cart(file: UploadFile = File(...), config: str = Form(...)):
+    """
+    Saves an STL file and its configuration JSON to the cart directory.
+    """
     try:
         conf_dict = json.loads(config)
         item_id = str(uuid.uuid4())
         
-        # 1. Save the STL
+        # Save STL with unique ID
         original_name = file.filename
         safe_name = f"{item_id}_{original_name}"
         file_path = os.path.join(CART_DIR, safe_name)
@@ -111,12 +122,12 @@ async def add_to_cart(
         with open(file_path, "wb") as f:
             f.write(await file.read())
             
-        # 2. Save metadata (JSON)
+        # Save Metadata
         meta_path = file_path + ".json"
         metadata = {
             "id": item_id,
             "filename": original_name,
-            "filepath": file_path, # Stores relative path like data/cart/...
+            "filepath": file_path,
             "config": conf_dict, 
             "added_at": datetime.now().isoformat(),
             "quantity": 1
@@ -132,6 +143,7 @@ async def add_to_cart(
 
 @app.get("/cart")
 def get_cart():
+    """Retrieves all items currently in the cart, sorted by date."""
     items = []
     json_files = glob.glob(os.path.join(CART_DIR, "*.json"))
     
@@ -182,6 +194,10 @@ def delete_item(req: UpdateQtyRequest):
 
 @app.post("/production/launch")
 def launch_production():
+    """
+    Moves all items from Cart to a new Production Batch.
+    Generates a MANIFEST.txt summary for the admin.
+    """
     items = get_cart()
     if not items:
         raise HTTPException(status_code=400, detail="Cart is empty")
@@ -193,6 +209,7 @@ def launch_production():
     moved_count = 0
     total_parts = 0
     
+    # Initialize Manifest Content
     summary_lines = []
     summary_lines.append(f"=== PRODUCTION ORDER : {batch_id} ===\n")
     summary_lines.append(f"Date : {datetime.now().strftime('%Y-%m-%d at %H:%M')}\n")
@@ -205,6 +222,7 @@ def launch_production():
         dst_json = os.path.join(batch_dir, os.path.basename(src_json))
         dst_stl = os.path.join(batch_dir, os.path.basename(src_stl))
         
+        # Move files
         if os.path.exists(src_json): shutil.move(src_json, dst_json)
         if os.path.exists(src_stl): shutil.move(src_stl, dst_stl)
         
@@ -212,8 +230,8 @@ def launch_production():
         qty = item.get("quantity", 1)
         total_parts += qty
         
+        # Add item details to manifest
         config = item.get("config", {})
-        
         summary_lines.append(f"PART #{index} : {item['filename']}\n")
         summary_lines.append(f"   [x{qty}] QUANTITY TO PRINT\n")
         summary_lines.append(f"   -----------------------------\n")
@@ -229,6 +247,7 @@ def launch_production():
     summary_lines.append(f"TOTAL PARTS TO PRODUCE : {total_parts}\n")
     summary_lines.append("="*50 + "\n")
 
+    # Write Manifest
     summary_path = os.path.join(batch_dir, "PRODUCTION_MANIFEST.txt")
     with open(summary_path, "w", encoding="utf-8") as f:
         f.writelines(summary_lines)
@@ -273,7 +292,10 @@ def list_production_batches():
 
 @app.get("/admin/batch/{batch_id}")
 def get_batch_details(batch_id: str):
-    """Return manifest and full items with config for detailed history"""
+    """
+    Returns the full text manifest and a list of items for the specified batch.
+    Used for the Admin detail view.
+    """
     safe_id = os.path.basename(batch_id)
     target_dir = os.path.join(PROD_DIR, safe_id)
     
@@ -289,7 +311,6 @@ def get_batch_details(batch_id: str):
         try:
             with open(jf, "r") as f:
                 data = json.load(f)
-                # Determine the filename of the STL on disk (same basename as json)
                 stl_filename = os.path.basename(jf).replace(".json", "")
                 
                 items.append({
@@ -298,7 +319,7 @@ def get_batch_details(batch_id: str):
                     "status": data.get("status", "Pending"),
                     "config": data.get("config", {}),
                     "quantity": data.get("quantity", 1),
-                    "stl_disk_name": stl_filename # To build URL in frontend
+                    "stl_disk_name": stl_filename
                 })
         except: pass
 

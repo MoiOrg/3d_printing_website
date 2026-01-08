@@ -6,6 +6,7 @@ export default function Admin({ lang }) {
   const navigate = useNavigate();
   const t = TRANSLATIONS[lang];
   
+  // --- State ---
   const [batches, setBatches] = useState([]);
   const [selectedBatchId, setSelectedBatchId] = useState(null);
   const [batchData, setBatchData] = useState({ content: "", items: [] });
@@ -44,16 +45,17 @@ export default function Admin({ lang }) {
 
   return (
     <div style={{ padding: '20px', height: 'calc(100vh - 80px)', display: 'flex', flexDirection: 'column' }}>
+      {/* Header */}
       <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1>🛡️ {t.admin_title || "Admin"}</h1>
-        {/* Changed from inline style to standard btn-secondary class */}
         <button onClick={() => navigate("/")} className="btn btn-secondary">
           {t.admin_back || "Back to Site"}
         </button>
       </div>
 
       <div style={{ display: 'flex', gap: '20px', flex: 1, overflow: 'hidden' }}>
-        {/* Left column: List */}
+        
+        {/* Left Column: Batch List */}
         <div style={{ width: '350px', overflowY: 'auto', borderRight: '1px solid #ddd', paddingRight: '10px' }}>
           <h3>{t.admin_batches || "Batches"}</h3>
           <ul style={{ listStyle: 'none', padding: 0 }}>
@@ -91,10 +93,10 @@ export default function Admin({ lang }) {
           </ul>
         </div>
 
-        {/* Right column: Details */}
+        {/* Right Column: Details & Manifest */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
           
-          {/* Part list and status */}
+          {/* Part Production Status List */}
           <div style={{ padding: '15px', background: 'white', border: '1px solid #ddd', borderRadius: '8px', maxHeight: '200px', overflowY: 'auto' }}>
             <h4>Production Status</h4>
             {batchData.items.length > 0 ? (
@@ -113,7 +115,7 @@ export default function Admin({ lang }) {
             ) : <p style={{ color: '#888' }}>Select a batch to see items.</p>}
           </div>
 
-          {/* Text Manifest */}
+          {/* Text Manifest Viewer */}
           <div style={{ flex: 1, background: '#1e1e1e', color: '#00ff00', padding: '20px', borderRadius: '8px', overflowY: 'auto', fontFamily: 'monospace' }}>
             {selectedBatchId ? (
               <pre style={{ whiteSpace: 'pre-wrap' }}>{batchData.content}</pre>

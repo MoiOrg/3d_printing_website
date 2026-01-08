@@ -1,15 +1,16 @@
 import React, { useState, useEffect, Suspense, useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Canvas, useLoader } from '@react-three/fiber';
 import { OrbitControls, Environment, Bounds, Center, useBounds } from '@react-three/drei';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
-import { useNavigate } from 'react-router-dom';
 import { TRANSLATIONS } from '../translations';
-import { MATERIAL_COLORS } from '../constants'; // Import colors
+import { MATERIAL_COLORS } from '../constants';
 import '../App.css';
 
 const INFILL_PRESETS = [20, 40, 60, 80];
 
-// --- 3D COMPONENTS ---
+// --- 3D Scene Components ---
+
 function Model({ url, color }) {
   const geometry = useLoader(STLLoader, url);
   return (
@@ -19,6 +20,7 @@ function Model({ url, color }) {
   );
 }
 
+// Wrapper to center the model and fit it within the camera view automatically
 const ModelWithAutoFit = React.memo(function ModelWithAutoFit({ url, color }) {
   const bounds = useBounds();
   const handleCentered = () => { bounds.refresh().fit(); };
@@ -31,21 +33,24 @@ const ModelWithAutoFit = React.memo(function ModelWithAutoFit({ url, color }) {
 
 export default function Editor({ lang }) {
   const navigate = useNavigate();
+  const t = TRANSLATIONS[lang];
+  const controlsRef = useRef(null);
+
+  // --- State ---
   const [fileUrl, setFileUrl] = useState(null);
   const [fileObject, setFileObject] = useState(null);
   
+  // Configuration State
   const [techKey, setTechKey] = useState("FDM");
   const [materialKey, setMaterialKey] = useState("PLA");
   const [infill, setInfill] = useState(20);
   
+  // Pricing & Metrics
   const [volume, setVolume] = useState(null);
-  const [quote, setQuote] = useState({price: 0, weight: 0 }); // Fixed typo 'kf' -> 'price'
+  const [quote, setQuote] = useState({price: 0, weight: 0 });
   const [isComputing, setIsComputing] = useState(false);
 
-  const controlsRef = useRef(null);
-  const t = TRANSLATIONS[lang];
-
-  // Dynamic options using MATERIAL_COLORS
+  // --- Derived Options ---
   const printOptions = useMemo(() => {
     return {
       FDM: {
@@ -74,6 +79,7 @@ export default function Editor({ lang }) {
     };
   }, [lang, t]);
 
+  // Update material default when switching technology
   const handleTechChange = (newTech) => {
     setTechKey(newTech);
     const defaultMat = printOptions[newTech].materials[0].id;
@@ -85,10 +91,13 @@ export default function Editor({ lang }) {
     return matObj ? matObj.color : "#ffffff";
   }, [techKey, materialKey, printOptions]);
 
+  // --- Handlers ---
+
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
+    // Reset state for new file
     setFileObject(file);
     setFileUrl(URL.createObjectURL(file));
     setVolume(null);
@@ -99,6 +108,7 @@ export default function Editor({ lang }) {
     formData.append("file", file);
 
     try {
+      // Analyze file on server to get volume
       const response = await fetch("http://localhost:8000/analyze-file", {
         method: "POST",
         body: formData,
@@ -115,6 +125,7 @@ export default function Editor({ lang }) {
     }
   };
 
+  // Recalculate price whenever configuration or volume changes
   useEffect(() => {
     if (volume !== null) {
       const fetchPrice = async () => {
@@ -135,6 +146,7 @@ export default function Editor({ lang }) {
           }
         } catch (err) { console.error(err); } finally { setIsComputing(false); }
       };
+      // Debounce slightly to prevent rapid firing
       const timeoutId = setTimeout(fetchPrice, 100);
       return () => clearTimeout(timeoutId);
     }
@@ -174,6 +186,7 @@ export default function Editor({ lang }) {
 
   return (
     <div className="editor-layout"> 
+      {/* Configuration Sidebar */}
       <aside className="sidebar">
         <div style={{ marginBottom: '20px' }}>
              <h2>{t.config_title}</h2>
@@ -236,6 +249,7 @@ export default function Editor({ lang }) {
         </div>
       </aside>
 
+      {/* 3D Viewer Area */}
       <main className="viewer-container">
         {!fileUrl && (
             <div className="empty-state" style={{ 

@@ -4,7 +4,7 @@ export const TRANSLATIONS = {
     nav_home: "Home",
     nav_services: "Services",
     nav_dashboard: "Dashboard",
-    nav_history: "History", // NEW
+    nav_history: "History",
     nav_admin: "Admin",
     nav_get_quote: "Start Project",
     
@@ -23,7 +23,7 @@ export const TRANSLATIONS = {
     services_title: "Our Technologies & Materials",
     services_intro: "We offer a comprehensive range of additive manufacturing solutions adapted to prototyping and mass production.",
     
-    // --- Existing Translations ---
+    // --- General / Dashboard ---
     title: "3D Print Studio",
     menu_title: "Project Dashboard",
     menu_add: "Add New Part",
@@ -74,13 +74,13 @@ export const TRANSLATIONS = {
     admin_select: "Select a batch to view details.",
     admin_back: "← Back to Site",
 
-    // --- Success Page (NEW) ---
+    // --- Success Page ---
     success_title: "Thank You!",
     success_msg: "Your production order has been successfully launched.",
     success_sub: "Our team will review your files and start the manufacturing process shortly.",
     btn_back_dash: "Go back to Dashboard",
 
-    // --- History Page (NEW) ---
+    // --- History Page ---
     history_title: "Order History",
     history_empty: "No past orders found.",
     col_date: "Batch ID / Date",
@@ -93,7 +93,7 @@ export const TRANSLATIONS = {
     nav_home: "首页",
     nav_services: "服务",
     nav_dashboard: "仪表板",
-    nav_history: "历史记录", // NEW
+    nav_history: "历史记录",
     nav_admin: "后台管理",
     nav_get_quote: "开始项目",
     
@@ -112,7 +112,7 @@ export const TRANSLATIONS = {
     services_title: "技术与材料",
     services_intro: "我们提供全面的增材制造解决方案，适用于原型制作和批量生产。",
 
-    // --- Existing Translations ---
+    // --- General / Dashboard ---
     title: "3D打印工作室",
     menu_title: "项目仪表板",
     menu_add: "添加新零件",
@@ -163,13 +163,13 @@ export const TRANSLATIONS = {
     admin_select: "请在左侧选择一个批次查看详情。",
     admin_back: "← 返回网站",
 
-    // --- Success Page (NEW) ---
+    // --- Success Page ---
     success_title: "谢谢！",
     success_msg: "您的生产订单已成功提交。",
     success_sub: "我们的团队将审核您的文件并尽快开始生产。",
     btn_back_dash: "返回仪表板",
 
-    // --- History Page (NEW) ---
+    // --- History Page ---
     history_title: "历史订单",
     history_empty: "暂无历史订单。",
     col_date: "日期/批次号",
