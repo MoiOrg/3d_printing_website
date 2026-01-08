@@ -31,14 +31,14 @@ PROD_DIR = os.path.join(DATA_DIR, "production")
 for d in [CART_DIR, PROD_DIR]:
     os.makedirs(d, exist_ok=True)
 
-# Materials Database (Keys updated to English)
+# Materials Database
 MATERIALS_DB = {
     "PLA":  {"density": 1.24, "price": 0.05},
     "PETG": {"density": 1.27, "price": 0.06},
     "ABS":  {"density": 1.04, "price": 0.055},
     "TPU":  {"density": 1.21, "price": 0.08},
-    "RESIN_STD":   {"density": 1.12, "price": 0.12},   # Was RESINE_STD
-    "RESIN_TOUGH": {"density": 1.18, "price": 0.15},   # Was RESINE_TOUGH
+    "RESIN_STD":   {"density": 1.12, "price": 0.12},
+    "RESIN_TOUGH": {"density": 1.18, "price": 0.15},
     "NYLON_PA12":  {"density": 0.95, "price": 0.18},
     "NYLON_GLASS": {"density": 1.10, "price": 0.22},
 }
@@ -131,7 +131,7 @@ async def add_to_cart(
 def get_cart():
     """List all items in the CART folder"""
     items = []
-    # FIX: We look for all .json files
+    # Look for all .json files in the cart directory
     json_files = glob.glob(os.path.join(CART_DIR, "*.json"))
     
     for jf in json_files:

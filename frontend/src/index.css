@@ -13,7 +13,7 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* FIX IS HERE: Force body to take full space */
+/* Force body to take full space */
 body {
   margin: 0;
   padding: 0;
@@ -28,7 +28,7 @@ body {
   height: 100%;
   margin: 0;
   padding: 0;
-  max-width: none; /* Important to cancel Vite default limit */
+  max-width: none; /* Cancel Vite default limit */
 }
 
 a {

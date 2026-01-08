@@ -15,6 +15,9 @@ PROD_DIR = os.path.join(DATA_DIR, "production")
 SLICER_PATH = "/home/kiparis/Bureau/Bambu_Studio_ubuntu-22.04_PR-8834.AppImage"
 
 class ProductionManagerApp:
+    """
+    GUI Application to manage production batches and visualize part details.
+    """
     def __init__(self, root):
         self.root = root
         self.root.title("Production Factory Interface")
@@ -124,7 +127,7 @@ class ProductionManagerApp:
             try:
                 os.makedirs(PROD_DIR, exist_ok=True)
             except OSError:
-                pass # Can happen if permissions issues, etc.
+                pass 
 
         if not os.path.exists(PROD_DIR):
              return
@@ -184,9 +187,8 @@ class ProductionManagerApp:
                     data = json.load(json_file)
                     
                     config = data.get('config', {})
-                    status = data.get('status', 'Pending') # Default to Pending
+                    status = data.get('status', 'Pending')
                     
-                    # CORRECTION HERE: We don't use data=... anymore
                     item_id = self.part_tree.insert("", tk.END, values=(
                         data.get('filename', 'Unknown'),
                         config.get('tech', 'N/A'),
@@ -210,7 +212,7 @@ class ProductionManagerApp:
         
         item_id = selected_item[0]
         
-        # CORRECTION HERE: Retrieve path from dictionary
+        # Retrieve path from dictionary
         full_path = self.part_map.get(item_id)
         
         if not full_path: return
@@ -278,10 +280,9 @@ class ProductionManagerApp:
                 json.dump(data, f, indent=4)
             
             # Refresh UI
-            self.load_batches() # To update left status if needed
+            self.load_batches()
             
-            # Restore selection (complex because tree rebuilds)
-            # Simplification: reload parts and clear selection details
+            # Restore selection (reload parts and clear selection details)
             self.load_parts(self.selected_batch_dir)
             self.reset_details()
             
