@@ -16,7 +16,7 @@ export default function History({ lang }) {
 
   const fetchHistory = async () => {
     try {
-      const res = await fetch("http://localhost:8000/admin/batches");
+      const res = await fetch("https://threed-printing-website-xq1q.onrender.com/admin/batches");
       if (res.ok) {
         const data = await res.json();
         setBatches(data);
@@ -39,7 +39,7 @@ export default function History({ lang }) {
     // Fetch details if not already cached
     if (!batchDetails[batchId]) {
       try {
-        const res = await fetch(`http://localhost:8000/admin/batch/${batchId}`);
+        const res = await fetch(`https://threed-printing-website-xq1q.onrender.com/admin/batch/${batchId}`);
         if (res.ok) {
           const data = await res.json();
           setBatchDetails(prev => ({ ...prev, [batchId]: data.items }));
@@ -116,7 +116,7 @@ export default function History({ lang }) {
                                              border: '1px solid #e2e8f0' 
                                          }}>
                                              <MiniViewer 
-                                                url={`http://localhost:8000/files/production/${batch.id}/${item.stl_disk_name}`} 
+                                                url={`https://threed-printing-website-xq1q.onrender.com/files/production/${batch.id}/${item.stl_disk_name}`} 
                                                 color={MATERIAL_COLORS[item.config.material]} // PASS COLOR
                                              />
                                              <div style={{ flex: 1 }}>

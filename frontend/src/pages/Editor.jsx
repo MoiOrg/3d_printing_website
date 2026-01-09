@@ -109,7 +109,7 @@ export default function Editor({ lang }) {
 
     try {
       // Analyze file on server to get volume
-      const response = await fetch("http://localhost:8000/analyze-file", {
+      const response = await fetch("https://threed-printing-website-xq1q.onrender.com/analyze-file", {
         method: "POST",
         body: formData,
       });
@@ -131,7 +131,7 @@ export default function Editor({ lang }) {
       const fetchPrice = async () => {
         if (!isComputing) setIsComputing(true); 
         try {
-          const response = await fetch("http://localhost:8000/calculate-price", {
+          const response = await fetch("https://threed-printing-website-xq1q.onrender.com/calculate-price", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -169,7 +169,7 @@ export default function Editor({ lang }) {
     formData.append("config", JSON.stringify(configData));
 
     try {
-      const res = await fetch("http://localhost:8000/cart/add", {
+      const res = await fetch("https://threed-printing-website-xq1q.onrender.com/cart/add", {
         method: "POST",
         body: formData
       });

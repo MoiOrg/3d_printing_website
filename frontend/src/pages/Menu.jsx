@@ -16,7 +16,7 @@ export default function Menu({ lang }) {
 
   const fetchCart = async () => {
     try {
-      const res = await fetch("http://localhost:8000/cart");
+      const res = await fetch("https://threed-printing-website-xq1q.onrender.com/cart");
       const data = await res.json();
       setCart(data);
     } catch (err) {
@@ -33,7 +33,7 @@ export default function Menu({ lang }) {
 
   const updateQty = async (id, newQty) => {
     if (newQty < 1) return;
-    await fetch("http://localhost:8000/cart/update-qty", {
+    await fetch("https://threed-printing-website-xq1q.onrender.com/cart/update-qty", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ item_id: id, quantity: newQty })
@@ -43,7 +43,7 @@ export default function Menu({ lang }) {
 
   const deleteItem = async (id) => {
     if(!confirm(t.btn_delete + "?")) return;
-    await fetch("http://localhost:8000/cart/delete", {
+    await fetch("https://threed-printing-website-xq1q.onrender.com/cart/delete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ item_id: id, quantity: 0 })
@@ -53,7 +53,7 @@ export default function Menu({ lang }) {
 
   const launchProduction = async () => {
     try {
-      const res = await fetch("http://localhost:8000/production/launch", { method: "POST" });
+      const res = await fetch("https://threed-printing-website-xq1q.onrender.com/production/launch", { method: "POST" });
       if (res.ok) {
         setCart([]); 
         navigate('/success'); 
@@ -65,7 +65,7 @@ export default function Menu({ lang }) {
 
   const getFileUrl = (item) => {
       const filename = item.filepath.split(/[/\\]/).pop();
-      return `http://localhost:8000/files/cart/${filename}`;
+      return `https://threed-printing-website-xq1q.onrender.com/files/cart/${filename}`;
   };
 
   return (

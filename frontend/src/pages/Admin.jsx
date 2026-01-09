@@ -17,7 +17,7 @@ export default function Admin({ lang }) {
 
   const fetchBatches = async () => {
     try {
-      const res = await fetch("http://localhost:8000/admin/batches");
+      const res = await fetch("https://threed-printing-website-xq1q.onrender.com/admin/batches");
       const data = await res.json();
       setBatches(data);
     } catch (e) {
@@ -29,7 +29,7 @@ export default function Admin({ lang }) {
     setSelectedBatchId(batchId);
     setBatchData({ content: "Loading...", items: [] });
     try {
-      const res = await fetch(`http://localhost:8000/admin/batch/${batchId}`);
+      const res = await fetch(`https://threed-printing-website-xq1q.onrender.com/admin/batch/${batchId}`);
       const data = await res.json();
       setBatchData(data);
     } catch (e) {

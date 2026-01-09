@@ -14,7 +14,8 @@ from datetime import datetime
 app = FastAPI()
 
 # --- Configuration & Setup ---
-origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
+# origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
+origins = ["https://threed-printing-website-xq1q.onrender.com"]
 
 app.add_middleware(
     CORSMiddleware,
