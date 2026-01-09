@@ -15,7 +15,8 @@ app = FastAPI()
 
 # --- Configuration & Setup ---
 # origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
-origins = ["https://threed-printing-website-xq1q.onrender.com"]
+# origins = ["https://threed-printing-website-xq1q.onrender.com"]
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
